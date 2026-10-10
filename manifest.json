@@ -1,0 +1,11 @@
+{
+  "name": "Legendary Pay",
+  "short_name": "Legendary Pay",
+  "start_url": "./",
+  "display": "standalone",
+  "background_color": "#0E0730",
+  "theme_color": "#0E0730",
+  "icons": [
+    { "src": "logo-512.jpg", "sizes": "512x512", "type": "image/jpeg", "purpose": "any" }
+  ]
+}
