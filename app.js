@@ -3,7 +3,7 @@ const API = (window.APP_CONFIG && window.APP_CONFIG.API_BASE) || '';
 const $app = document.getElementById('app');
 const $toast = document.getElementById('toast');
 
-const PROTECTED = ['home', 'send', 'deposit', 'history', 'verify'];
+const PROTECTED = ['home', 'send', 'deposit', 'history', 'verify', 'verify-email'];
 const TX_LABELS = {
   deposit: 'Deposit',
   internal_transfer: 'Wallet transfer',
@@ -113,6 +113,12 @@ async function navigate(screen) {
   render();
 }
 
+function nextScreen() {
+  const w = state.wallet;
+  if (!w.email_verified) return 'verify-email';
+  return w.kyc_verified ? 'home' : 'verify';
+}
+
 function render() {
   $app.innerHTML = view();
   window.scrollTo(0, 0);
@@ -122,6 +128,7 @@ function view() {
   switch (state.screen) {
     case 'login': return authView();
     case 'verify': return verifyView();
+    case 'verify-email': return verifyEmailView();
     case 'home': return homeView();
     case 'send': return sendView();
     case 'deposit': return depositView();
@@ -199,6 +206,21 @@ function authView() {
         <label>Referral code (optional)<input name="referralCode" autocomplete="off"></label>
         <button type="submit">Create my wallet</button>
       </form>`}
+    </div>
+  </div>`;
+}
+
+function verifyEmailView() {
+  const email = state.wallet ? state.wallet.email : '';
+  return `<div class="app-inner">
+    <div class="topbar"><h2>Check your email</h2></div>
+    <div class="card">
+      <p class="sub">We sent a 6-digit code to <strong>${esc(email)}</strong>. It expires in 15 minutes.</p>
+      <form data-form="verify-email" style="margin-top:14px">
+        <label>6-digit code<input name="code" inputmode="numeric" maxlength="6" pattern="\\d{6}" required autocomplete="one-time-code"></label>
+        <button type="submit">Confirm email</button>
+        <button type="button" class="link" data-act="resend-verify">Resend code</button>
+      </form>
     </div>
   </div>`;
 }
@@ -365,7 +387,7 @@ const SUBMIT = {
     store.set('lp_token', r.token);
     state.wallet = null;
     await loadWallet();
-    navigate(state.wallet.kyc_verified ? 'home' : 'verify');
+    navigate(nextScreen());
   },
 
   async signup(d) {
@@ -382,8 +404,8 @@ const SUBMIT = {
     });
     store.set('lp_token', r.token);
     state.wallet = null;
-    toast('Wallet created. Now verify your identity.');
-    navigate('verify');
+    toast('Account created. Enter the code we emailed you.');
+    navigate('verify-email');
   },
 
   async forgot(d) {
@@ -399,6 +421,13 @@ const SUBMIT = {
     state.authMode = 'login';
     toast('PIN reset. Log in with your new PIN.');
     render();
+  },
+
+  async 'verify-email'(d) {
+    await api('/auth/verify-email', { method: 'POST', body: { code: d.code.trim() } });
+    if (state.wallet) state.wallet.email_verified = true;
+    toast('Email confirmed.');
+    navigate(nextScreen());
   },
 
   async verify(d) {
@@ -483,6 +512,9 @@ const ACTIONS = {
   'auth-mode'(el) { state.authMode = el.dataset.mode; render(); },
   'send-type'(el) { state.sendType = el.dataset.type; render(); },
   logout() { logout(); },
+  async 'resend-verify'() {
+    try { await api('/auth/resend-verify', { method: 'POST' }); toast('A new code is on its way.'); } catch (e) { toast(e.message); }
+  },
   retry() { navigate(state.screen); },
   async 'refresh-history'() {
     try { state.history = await api('/wallet/history'); render(); toast('Updated'); } catch (e) { toast(e.message); }
@@ -526,7 +558,7 @@ $app.addEventListener('change', onLookupEvent);
   if (store.get('lp_token')) {
     try {
       await loadWallet();
-      navigate('home');
+      navigate(nextScreen());
       return;
     } catch {
       // token invalid or server unreachable: fall through to login
