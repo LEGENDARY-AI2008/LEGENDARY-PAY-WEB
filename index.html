@@ -30,6 +30,12 @@
 <script src="screens.js"></script>
 <script src="support.js"></script>
 <script src="fingerprint.js"></script>
+<script src="extras.js"></script>
+<script src="bills.js"></script>
+<script src="account.js"></script>
+<script>
+  if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(() => {});
+</script>
 <script src="app.js"></script>
 </body>
 </html>

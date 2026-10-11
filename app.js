@@ -15,6 +15,16 @@ const TX_LABELS = {
   goal_deposit: 'Saved to goal',
   goal_withdraw: 'Moved from goal',
   bill_airtime: 'Airtime top-up',
+  bill_data: 'Data bundle',
+  bill_electricity: 'Electricity bill',
+  bill_cable: 'Cable TV',
+  bill_exam: 'Exam PIN',
+  bill_internet: 'Internet plan',
+  bill_betting: 'Betting top-up',
+  bill_water: 'Water bill',
+  bill_insurance: 'Insurance premium',
+  bill_waste: 'Waste bill',
+  bill_school: 'School fees',
 };
 
 // Tabs in the bottom bar. Moving to a tab clears the Back history.
@@ -50,6 +60,8 @@ const state = {
   receiptId: null,
   receipt: null,
   support: null,         // { online, messages } for the user's live chat
+  txList: null,          // transactions for the History screen (after search or filters)
+  txFilter: { q: '', dir: '', kind: '', from: '', to: '' },
   adminThread: null,     // { id, messages } for the chat an admin has open
   banks: null,
   bankFeeKobo: 0,
@@ -223,7 +235,7 @@ async function loadFor(screen, opts) {
       g('/rewards', 'rewards'); g('/wallet/history', 'history'); g('/checkin', 'checkin');
       g('/notifications', 'notifications'); g('/reminders', 'reminders');
       break;
-    case 'history': g('/wallet/history', 'history'); break;
+    case 'history': tasks.push(loadTransactions()); break;
     case 'rewards':
       g('/rewards', 'rewards'); g('/rewards/list', 'rewardsList'); g('/checkin', 'checkin'); g('/leaderboard', 'leaderboard');
       break;
@@ -241,6 +253,12 @@ async function loadFor(screen, opts) {
     case 'limits': g('/limits', 'limits'); break;
     case 'settings': g('/me/settings', 'settings'); g('/goals', 'goals'); break;
     case 'airtime': state.idem = newId(); break;
+    case 'bills':
+      state.idem = newId();
+      state.billers = null;
+      state.billItems = [];
+      g(`/bills/billers?category=${encodeURIComponent(state.billCat || 'DATA')}`, 'billers');
+      break;
     case 'support': g('/support', 'support'); break;
     case 'receipt':
       state.receipt = null;
@@ -290,6 +308,8 @@ const VIEWS = {
   rewards: () => rewardsView(),
   goals: () => goalsView(),
   airtime: () => airtimeView(),
+  bills: () => billsView(),
+  'delete-account': () => deleteAccountView(),
   insights: () => insightsView(),
   schedules: () => schedulesView(),
   reminders: () => remindersView(),
@@ -319,6 +339,22 @@ async function fetchAdmin(query) {
     api('/admin/support'),
   ]);
   return { stats, users, payouts, bills, settings, support, query };
+}
+
+// ---------- transaction search (History screen) ----------
+// Loads the transactions that match state.txFilter. Quiet on failure: the old list stays.
+async function loadTransactions() {
+  const f = state.txFilter || {};
+  const qs = new URLSearchParams();
+  for (const key of ['q', 'dir', 'kind', 'from', 'to']) {
+    if (f[key]) qs.set(key, f[key]);
+  }
+  try {
+    state.txList = await api('/transactions?' + qs.toString());
+  } catch (e) {
+    if (state.txList === null) state.txList = [];
+    toast(e.message);
+  }
 }
 
 // ---------- live chat polling (only while the support screen is open) ----------
@@ -362,7 +398,7 @@ const SUBMIT = {
       body: {
         phone: d.phone.trim(),
         email: d.email.trim(),
-        pin: d.pin,
+        pin: d.pin, approval: d.approval,
         referralCode: d.referralCode.trim() || undefined,
         deviceId: deviceId(),
       },
@@ -442,7 +478,7 @@ const SUBMIT = {
   async 'goal-move'(d) {
     await api(`/goals/${encodeURIComponent(d.goalId)}/move`, {
       method: 'POST',
-      body: { amount: toKobo(d.amount), direction: d.direction, pin: d.pin, idemKey: d.idemKey },
+      body: { amount: toKobo(d.amount), direction: d.direction, pin: d.pin, approval: d.approval, idemKey: d.idemKey },
     });
     state.wallet = null;
     toast(d.direction === 'in' ? 'Saved to your goal.' : 'Moved back to your wallet.');
@@ -453,7 +489,7 @@ const SUBMIT = {
     try {
       const r = await api('/bills/airtime', {
         method: 'POST',
-        body: { network: d.network, phone: d.phone.trim(), amount: toKobo(d.amount), pin: d.pin, idemKey: d.idemKey },
+        body: { network: d.network, phone: d.phone.trim(), amount: toKobo(d.amount), pin: d.pin, approval: d.approval, idemKey: d.idemKey },
       });
       state.wallet = null;
       state.idem = newId();
@@ -466,13 +502,40 @@ const SUBMIT = {
     }
   },
 
+  async 'delete-account'(d) {
+    await api('/me/account', { method: 'DELETE', body: { confirm: d.confirm, pin: d.pin, approval: d.approval } });
+    logout();
+    toast('Your account has been deleted.');
+  },
+
+  async 'bill-pay'(d) {
+    try {
+      const r = await api('/bills/pay', {
+        method: 'POST',
+        body: {
+          category: d.category, biller: d.biller, item: d.item, customer: d.customer.trim(),
+          amount: d.amount ? toKobo(d.amount) : undefined,
+          pin: d.pin, approval: d.approval, idemKey: d.idemKey,
+        },
+      });
+      state.wallet = null;
+      state.idem = newId();
+      toast(r.status === 'pending' ? 'Payment is processing.' : 'Payment sent.');
+      navigate('home');
+    } catch (e) {
+      // A refunded attempt must not be retried with the same key.
+      if (e.message.includes('could not be paid')) state.idem = newId();
+      throw e;
+    }
+  },
+
   async 'send-wallet'(d) {
     await api('/transfer/internal', {
       method: 'POST',
       body: {
         toAccount: d.toAccount.trim(),
         amount: toKobo(d.amount),
-        pin: d.pin,
+        pin: d.pin, approval: d.approval,
         idemKey: state.idem,
         saveAs: d.saveAs?.trim() || undefined,
         note: d.note?.trim() || undefined,
@@ -493,7 +556,7 @@ const SUBMIT = {
         accountNumber: d.accountNumber.trim(),
         bankCode: d.bankCode,
         amount: toKobo(d.amount),
-        pin: d.pin,
+        pin: d.pin, approval: d.approval,
         idemKey: state.idem,
         saveAs: d.saveAs?.trim() || undefined,
         note: d.note?.trim() || undefined,
@@ -544,7 +607,7 @@ const SUBMIT = {
         frequency: d.frequency,
         toAccount: d.toAccount?.trim() || '',
         goalId: d.goalId ? Number(d.goalId) : undefined,
-        pin: d.pin,
+        pin: d.pin, approval: d.approval,
       },
     });
     toast('Schedule created.');
@@ -555,6 +618,26 @@ const SUBMIT = {
     await api('/budgets', { method: 'POST', body: { category: d.category, limitKobo: toKobo(d.limit) } });
     toast('Budget saved.');
     navigate('insights');
+  },
+
+  async 'tx-search'(d) {
+    state.txFilter = { q: d.q.trim(), dir: d.dir || '', kind: d.kind || '', from: d.from || '', to: d.to || '' };
+    await loadTransactions();
+    render();
+  },
+
+  // Downloads one month as a CSV file (opens in Excel or Google Sheets).
+  async statement(d) {
+    const r = statementRange(d.period, d.when);
+    const rows = await api(`/transactions?from=${r.from}&to=${r.to}&limit=5000`);
+    if (!rows.length) { toast('No transactions in that period.'); return; }
+    downloadStatement(r.label, rows);
+  },
+
+  async 'report-tx'(d) {
+    await api(`/transactions/${encodeURIComponent(d.id)}/report`, { method: 'POST', body: { message: d.message.trim() } });
+    toast('Report sent. Our team will reply in Live chat.');
+    render();
   },
 
   async 'support-send'(d) {
@@ -647,8 +730,20 @@ function prefillSend(type, prefill) {
 const ACTIONS = {
   'auth-mode'(el) { state.authMode = el.dataset.mode; render(); },
   'approve-fp'(el) { fpApprove(el); },
+  'bill-open'(el) { state.billCat = el.dataset.cat; navigate('bills', { push: true }); },
+  'bill-check'(el) { billCheck(el); },
   'fp-login'() { fpLogin(); },
   'fp-register'() { fpRegister(); },
+  'scan-qr'() { startScan(); },
+  'upload-qr'() { uploadQr(); },
+  'download-qr'() { downloadQr(); },
+  'share-receipt'() { shareReceipt(); },
+  async 'tx-clear'() {
+    state.txFilter = { q: '', dir: '', kind: '', from: '', to: '' };
+    await navigate('history');
+  },
+  'install-app'() { installApp(); },
+  'dismiss-install'() { dismissInstall(); },
 
   back() {
     if (state.screen === 'login') { state.authMode = 'login'; render(); return; }
@@ -737,7 +832,8 @@ const ACTIONS = {
   receipt(el) { state.receiptId = el.dataset.id; navigate('receipt', { push: true }); },
 
   async 'refresh-history'() {
-    try { state.history = await api('/wallet/history'); render(); toast('Updated'); } catch (e) { toast(e.message); }
+    await navigate('history');
+    toast('Updated');
   },
 
   async checkin() {
@@ -849,6 +945,9 @@ function onLookupEvent(e) {
 }
 $app.addEventListener('input', onLookupEvent);
 $app.addEventListener('change', onLookupEvent);
+$app.addEventListener('change', (e) => {
+  if (e.target.name === 'period' && e.target.form && e.target.form.dataset.form === 'statement') setStatementPeriod(e.target);
+});
 
 // ---------- start ----------
 (async function init() {

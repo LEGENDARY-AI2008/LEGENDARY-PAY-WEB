@@ -203,6 +203,7 @@ function homeView() {
       <button class="small" data-act="checkin" ${ck.doneToday ? 'disabled' : ''}>${ck.doneToday ? 'Done' : 'Check in'}</button>
     </div>
 
+    ${installBannerHtml()}
     <div class="grid4">
       ${gItem('data-act="go-send" data-type="wallet"', '↗', 'To wallet')}
       ${gItem('data-act="go-send" data-type="bank"', '🏦', 'To bank')}
@@ -253,6 +254,17 @@ function moreView() {
     <div class="card">
       <div class="grid4" style="margin:0">
         ${gItem('data-go="airtime"', '📱', 'Airtime')}
+        ${gItem('data-act="bill-open" data-cat="DATA"', '📶', 'Data')}
+        ${gItem('data-act="bill-open" data-cat="ELECTRICITY"', '💡', 'Electricity')}
+        ${gItem('data-act="bill-open" data-cat="CABLE"', '📺', 'Cable TV')}
+        ${gItem('data-act="bill-open" data-cat="EXAM"', '🎓', 'Exam PIN')}
+        ${gItem('data-act="bill-open" data-cat="INTERNET"', '🌐', 'Internet')}
+        ${gItem('data-act="bill-open" data-cat="BETTING"', '⚽', 'Betting')}
+        ${gItem('data-act="bill-open" data-cat="WATER"', '💧', 'Water')}
+        ${gItem('data-act="bill-open" data-cat="INSURANCE"', '🛡', 'Insurance')}
+        ${gItem('data-act="bill-open" data-cat="WASTE"', '🗑', 'Waste')}
+        ${gItem('data-act="bill-open" data-cat="SCHOOL"', '🏫', 'School fees')}
+        ${gItem('data-act="go-send" data-type="bank"', '🏧', 'Withdraw')}
       </div>
     </div>
     <div class="section">Account</div>
@@ -351,6 +363,10 @@ function sendView() {
   const p = state.prefill || {};
   const tab = state.sendTab || 'recent';
   const walletForm = `
+    <div style="display:flex;gap:8px;margin-bottom:12px">
+      <button type="button" class="secondary" data-act="scan-qr">Scan QR code</button>
+      <button type="button" class="secondary" data-act="upload-qr">Upload QR image</button>
+    </div>
     <form data-form="send-wallet" data-lookup-form data-approval>
       <label>Recipient wallet number<input name="toAccount" inputmode="numeric" maxlength="10" pattern="\\d{10}" data-lookup required value="${esc(p.toAccount || '')}"></label>
       <div class="recipient"></div>
@@ -476,19 +492,60 @@ function depositView() {
     </div>
     <div class="card center">
       <p class="sub" style="margin-top:0">Your Legendary wallet QR code. Others can scan it to send you money.</p>
-      <button class="secondary" data-act="show-qr">Show QR code</button>
+      <div style="display:flex;gap:8px;justify-content:center;flex-wrap:wrap">
+        <button class="secondary" data-act="show-qr" style="width:auto">Show QR code</button>
+        <button class="secondary" data-act="download-qr" style="width:auto">Download QR</button>
+      </div>
       <div id="qr"></div>
     </div>
   </div>${nav('home')}`;
 }
 
 function historyView() {
-  const items = state.history || [];
+  const items = state.txList || [];
+  const f = state.txFilter || {};
   return `<div class="app-inner">
     ${backBtn()}
     <div class="topbar"><h2>History</h2>
       <button class="small secondary" data-act="refresh-history">Refresh</button></div>
-    <div class="card">${items.length ? txList(items) : '<p class="muted" style="margin:0">No transactions yet.</p>'}</div>
+    <div class="card">
+      <form data-form="statement">
+        <label>Statement for
+          <select name="period">
+            <option value="daily">A day</option>
+            <option value="weekly">A week (Monday to Sunday)</option>
+            <option value="monthly" selected>A month</option>
+            <option value="yearly">A year</option>
+          </select>
+        </label>
+        <label>Pick a month<input name="when" type="month" required value="${new Date().getFullYear()}-${String(new Date().getMonth() + 1).padStart(2, '0')}"></label>
+        <button type="submit" class="secondary">Download statement (CSV)</button>
+        <p class="note" style="margin:0">Opens in Excel or Google Sheets.</p>
+      </form>
+    </div>
+    <div class="card">
+      <form data-form="tx-search">
+        <input name="q" maxlength="60" placeholder="Search a note or amount, e.g. Rent or 500" value="${esc(f.q)}">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+          <label>Money<select name="dir">
+            <option value="">All</option>
+            <option value="in" ${f.dir === 'in' ? 'selected' : ''}>In</option>
+            <option value="out" ${f.dir === 'out' ? 'selected' : ''}>Out</option>
+          </select></label>
+          <label>Type<select name="kind">
+            <option value="">All types</option>
+            ${Object.keys(TX_LABELS).map((k) => `<option value="${k}" ${f.kind === k ? 'selected' : ''}>${esc(TX_LABELS[k])}</option>`).join('')}
+          </select></label>
+          <label>From<input name="from" type="date" value="${esc(f.from)}"></label>
+          <label>To<input name="to" type="date" value="${esc(f.to)}"></label>
+        </div>
+        <div style="display:flex;gap:8px">
+          <button type="submit">Search</button>
+          <button type="button" class="secondary" data-act="tx-clear">Clear</button>
+        </div>
+      </form>
+    </div>
+    <div class="card">${items.length ? txList(items) : '<p class="muted" style="margin:0">No transactions match.</p>'}</div>
     <p class="note center">Tap any transaction to see its receipt.</p>
   </div>${nav('history')}`;
 }
@@ -525,6 +582,18 @@ function receiptView() {
       ${r.note ? `<div class="row-between" style="margin-top:10px"><span class="muted">Note</span><strong>${esc(r.note)}</strong></div>` : ''}
       ${r.reference ? `<div class="row-between" style="margin-top:10px"><span class="muted">Reference</span><strong style="font-size:13px;word-break:break-all">${esc(r.reference)}</strong></div>` : ''}
       <div class="row-between" style="margin-top:10px"><span class="muted">Receipt ID</span><strong style="font-size:12px;word-break:break-all">${esc(r.id)}</strong></div>
+    </div>
+    <div class="card">
+      <button class="secondary" data-act="share-receipt">Share receipt</button>
+    </div>
+    <div class="card">
+      <form data-form="report-tx">
+        <input type="hidden" name="id" value="${esc(r.id)}">
+        <label>Something wrong with this payment?
+          <textarea name="message" rows="3" maxlength="400" required placeholder="Tell us what happened" style="width:100%;background:var(--card-2);border:1px solid var(--line);color:var(--text);border-radius:14px;padding:14px;font:inherit"></textarea>
+        </label>
+        <button type="submit" class="secondary">Report a problem</button>
+      </form>
     </div>
   </div>${nav('history')}`;
 }
@@ -843,6 +912,8 @@ function settingsView() {
       ${rowLine('Notifications', '›', '', 'data-go="notifications"')}
       ${rowLine('Security center', '›', '', 'data-go="security"')}
       ${rowLine('Help', '›', '', 'data-go="help"')}
+      ${rowLine('Delete account', '›', 'Close your wallet', 'data-go="delete-account"')}
+      <a href="/privacy" target="_blank" rel="noopener" class="row-line" style="text-decoration:none;color:inherit"><div><div class="t-title">Privacy policy</div></div><span class="muted">›</span></a>
     </div>
     <div class="card" style="text-align:center"><button class="secondary" data-act="logout" style="color:var(--danger)">Sign out</button></div>
   </div>${nav('me')}`;
@@ -884,9 +955,24 @@ function adminView() {
   if (!a) return `<div class="app-inner">${backBtn()}<p class="center muted">Could not load the admin panel.</p></div>`;
   const s = a.stats;
   const statCell = (label, value) => `<div style="background:var(--card-2);border-radius:14px;padding:12px"><span class="muted" style="font-size:13px">${esc(label)}</span><strong style="display:block;font-size:20px">${esc(value)}</strong></div>`;
+  const kinds = (s.profitByKind || []).map((k) =>
+    `<div class="row-between"><span class="muted">${esc(String(k.kind).replace(/_/g, ' '))}</span><strong>${naira(k.kobo)}</strong></div>`).join('');
   return `<div class="app-inner">
     ${backBtn()}
     <div class="topbar"><h2>Admin panel</h2></div>
+
+    <div class="card">
+      <h3 style="font-size:17px;margin-bottom:10px">Profit (our fees)</h3>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+        ${statCell('Total profit', naira(s.profitKobo))}
+        ${statCell('Today', naira(s.profitTodayKobo))}
+        ${statCell('This week', naira(s.profitWeekKobo))}
+        ${statCell('This month', naira(s.profitMonthKobo))}
+      </div>
+      <h3 style="font-size:15px;margin:14px 0 6px">By source</h3>
+      ${kinds || '<p class="muted" style="margin:0">No fees yet.</p>'}
+      <p class="note">Check this total against your Flutterwave balance each week.</p>
+    </div>
 
     <div class="card">
       <h3 style="font-size:17px;margin-bottom:10px">Overview</h3>

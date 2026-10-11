@@ -1,0 +1,70 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Privacy policy · Legendary Pay</title>
+<style>
+  :root { --bg:#f7f5fb; --text:#1d1530; --muted:#6b6280; --accent:#6a2bd6; }
+  @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --bg:#140d24; --text:#f1ecfb; --muted:#a79dbf; --accent:#a77bff; } }
+  :root[data-theme="dark"] { --bg:#140d24; --text:#f1ecfb; --muted:#a79dbf; --accent:#a77bff; }
+  body { margin:0; background:var(--bg); color:var(--text); font:16px/1.6 system-ui, sans-serif; }
+  main { max-width:720px; margin:0 auto; padding:24px 16px 48px; }
+  h1 { color:var(--accent); font-size:26px; margin:8px 0 4px; }
+  h2 { font-size:18px; margin:28px 0 8px; }
+  .muted { color:var(--muted); font-size:14px; }
+  a { color:var(--accent); }
+</style>
+</head>
+<body>
+<main>
+  <h1>Privacy policy</h1>
+  <p class="muted">Legendary Pay · Last updated 11 October 2026</p>
+
+  <p>This policy explains what information Legendary Pay collects, why we collect it, who we share it with, and how you can delete your account. Legendary Pay is a naira wallet run by LËGĒNDÃRY LAB™ Studio.</p>
+
+  <h2>1. What we collect</h2>
+  <ul>
+    <li><strong>Account details:</strong> your phone number, email address, full name and the 4-digit PIN you choose. We store only a scrambled (hashed) version of your PIN, never the PIN itself.</li>
+    <li><strong>Identity checks:</strong> when you verify your identity, your BVN or NIN is sent to our payment partner Flutterwave to check it. We do not keep your full BVN or NIN after the check.</li>
+    <li><strong>Money records:</strong> deposits, transfers, savings, bill payments and the amounts and dates of each.</li>
+    <li><strong>Device information:</strong> a device ID, used to stop people from abusing the referral rewards.</li>
+    <li><strong>Support messages:</strong> chats you send to our support team, and any transaction problem you report.</li>
+  </ul>
+  <p>Fingerprint login and payment approval work on your phone. Your fingerprint never leaves your phone and Legendary Pay never receives or stores it. We store only a public key that your phone creates, which cannot be used to recover your fingerprint.</p>
+
+  <h2>2. Why we use it</h2>
+  <p>We use your information to run your wallet, send and record payments, protect your account from fraud, answer support messages, send you account emails and alerts, and meet our legal duties (for example, keeping financial records).</p>
+
+  <h2>3. Who we share it with</h2>
+  <ul>
+    <li><strong>Flutterwave</strong>, for payments, bank transfers, bill payments and identity checks.</li>
+    <li><strong>Our hosting providers</strong> (Render for the server, Vercel for the web app), which store and process data on our behalf.</li>
+    <li><strong>Our email service</strong>, to send account emails such as codes and receipts.</li>
+  </ul>
+  <p>We do not sell your personal information.</p>
+
+  <h2>4. How long we keep it</h2>
+  <p>While your account is open, we keep your information so the wallet works. When you delete your account, we erase your name, phone number, email, PIN and device details. We keep your transaction records, because the law requires us to keep financial records for a set time.</p>
+
+  <h2>5. Delete your account</h2>
+  <p>Open the app, go to <strong>Me → Settings → Delete account</strong>, and confirm with your PIN or fingerprint. Your wallet must be at ₦0 first. After deletion you cannot sign in again with the same phone number or email.</p>
+
+  <h2>6. Keeping your account safe</h2>
+  <p>Every debit needs your PIN or fingerprint. We lock PIN attempts after several wrong tries. Keep your PIN private, and do not share codes sent to you by email with anyone, including people who say they work for us.</p>
+
+  <h2>7. Who can use Legendary Pay</h2>
+  <p>Legendary Pay is for people aged 18 and over. We do not knowingly collect information from anyone younger.</p>
+
+  <h2>8. Your questions</h2>
+  <p>To ask about your information, open the app and go to <strong>Help → Chat with support</strong>. We will reply there.</p>
+
+  <h2>9. Changes</h2>
+  <p>If we change this policy, we will update the date at the top and tell you in the app.</p>
+</main>
+<script>
+  // Follow the theme the user picked in the app.
+  try { var t = localStorage.getItem('lp_theme'); if (t) document.documentElement.setAttribute('data-theme', t === 'light' ? 'light' : 'dark'); } catch (e) {}
+</script>
+</body>
+</html>
