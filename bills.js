@@ -33,7 +33,7 @@ function billsView() {
         <label>${providerLabel}
           <select name="biller" required>${billOptions(billers, 'Choose', false)}</select>
         </label>
-        ${billers.length ? '' : '<p class="note" style="margin:0 0 10px">Providers could not be loaded. Try again in a moment.</p>'}
+        ${billers.length ? '' : '<p class="note" style="margin:0 0 10px">Providers for this service are not available yet.</p>'}
         <label>${planLabel}
           <select name="item" required>${billOptions(items, items.length ? 'Choose' : 'Pick a provider first', !typed)}</select>
         </label>
