@@ -245,19 +245,16 @@ button.small { width: auto; padding: 8px 12px; font-size: 14px; border-radius: 1
   backdrop-filter: blur(3px); -webkit-backdrop-filter: blur(3px);
 }
 .loader[hidden] { display: none; }
-.loader-box { position: relative; width: 120px; height: 120px; display: flex; align-items: center; justify-content: center; }
-.loader-box img {
-  width: 84px; height: 84px; border-radius: 20px; object-fit: cover;
-  box-shadow: 0 10px 30px rgba(123, 63, 242, .5);
-  animation: lp-pulse 1.2s ease-in-out infinite;
-}
-.loader-ring {
-  position: absolute; inset: 0; border-radius: 50%;
-  border: 3px solid transparent; border-top-color: var(--brand-2); border-right-color: var(--brand);
-  animation: lp-spin .9s linear infinite;
-}
-@keyframes lp-pulse { 0%, 100% { transform: scale(.92); opacity: .85; } 50% { transform: scale(1.04); opacity: 1; } }
-@keyframes lp-spin { to { transform: rotate(360deg); } }
+/* logo parts: the L and P move out and back in, the orbit ring keeps turning */
+.lp-mark { position: relative; width: 160px; height: 160px; filter: drop-shadow(0 8px 22px rgba(123, 63, 242, .45)); }
+.lp-mark img { position: absolute; display: block; max-width: none; user-select: none; -webkit-user-drag: none; }
+.lp-ring { transform-origin: 50% 50%; animation: lp-orbit 3.6s linear infinite; }
+.lp-l { animation: lp-out-l 2.4s ease-in-out infinite; }
+.lp-p { animation: lp-out-p 2.4s ease-in-out infinite; }
+@keyframes lp-orbit { to { transform: rotate(360deg); } }
+@keyframes lp-out-l { 0%, 100% { transform: translate(0, 0); } 50% { transform: translate(-18px, -6px); } }
+@keyframes lp-out-p { 0%, 100% { transform: translate(0, 0); } 50% { transform: translate(18px, 6px); } }
 @media (prefers-reduced-motion: reduce) {
-  .loader-box img, .loader-ring { animation-duration: 3s; }
+  .lp-ring { animation-duration: 9s; }
+  .lp-l, .lp-p { animation-duration: 5s; }
 }
