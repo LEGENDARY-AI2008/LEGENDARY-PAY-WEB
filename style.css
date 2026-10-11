@@ -142,6 +142,8 @@ button.secondary { background: var(--card-2); border: 1px solid var(--line); }
 button.link {
   background: none; width: auto; padding: 6px 0; color: var(--brand-2); font-weight: 600; font-size: 14px;
 }
+.bar { height: 8px; background: var(--card-2); border-radius: 99px; overflow: hidden; }
+.bar span { display: block; height: 100%; background: linear-gradient(90deg, var(--brand), var(--gold)); }
 .back-row { margin: 8px 0 4px; }
 .back-btn { width: auto; padding: 6px 0; font-size: 15px; color: var(--brand-2); }
 button.small { width: auto; padding: 8px 12px; font-size: 14px; border-radius: 12px; }

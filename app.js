@@ -3,7 +3,7 @@ const API = (window.APP_CONFIG && window.APP_CONFIG.API_BASE) || '';
 const $app = document.getElementById('app');
 const $toast = document.getElementById('toast');
 
-const PROTECTED = ['home', 'send', 'deposit', 'history', 'verify', 'verify-email', 'receipt', 'rewards', 'profile'];
+const PROTECTED = ['home', 'send', 'deposit', 'history', 'verify', 'verify-email', 'receipt', 'rewards', 'profile', 'goals', 'airtime', 'admin'];
 const TX_LABELS = {
   deposit: 'Deposit',
   internal_transfer: 'Wallet transfer',
@@ -12,6 +12,9 @@ const TX_LABELS = {
   cashback: 'Cashback',
   bonus: 'Bonus',
   referral: 'Referral bonus',
+  goal_deposit: 'Saved to goal',
+  goal_withdraw: 'Moved from goal',
+  bill_airtime: 'Airtime top-up',
 };
 const REWARD_NAMES = { welcome: 'Welcome bonus', referral: 'Referral bonus', cashback: 'Cashback' };
 const REWARD_STATUS = { paid: 'Paid', pending: 'Pending', void: 'Cancelled' };
@@ -25,6 +28,10 @@ const state = {
   history: null,
   rewards: null,
   rewardsList: null,
+  goals: null,
+  admin: null,           // { stats, users, payouts, bills, settings, query } for admin accounts
+  beneficiaries: null,
+  prefill: null,         // values for the send form, set by "Use" on a saved person
   receiptId: null,
   receipt: null,
   banks: null,
@@ -117,8 +124,17 @@ async function navigate(screen) {
     try { state.receipt = await api(`/wallet/receipt/${encodeURIComponent(state.receiptId)}`); }
     catch (e) { toast(e.message); state.receipt = null; }
   }
+  if (screen === 'goals') {
+    try { state.goals = await api('/goals'); } catch (e) { toast(e.message); state.goals = []; }
+  }
+  if (screen === 'airtime') state.idem = newId();
+  if (screen === 'admin') {
+    try { state.admin = await fetchAdmin(''); } catch (e) { toast(e.message); state.admin = null; }
+  }
   if (screen === 'send') {
     state.idem = newId();
+    state.prefill = null;
+    try { state.beneficiaries = await api('/beneficiaries'); } catch { state.beneficiaries = []; }
     if (!state.banks) {
       try {
         const b = await api('/banks', { auth: false });
@@ -133,6 +149,7 @@ async function navigate(screen) {
 function nextScreen() {
   const w = state.wallet;
   if (!w.email_verified) return 'verify-email';
+  if (w.is_admin) return 'admin';
   return w.kyc_verified ? 'home' : 'verify';
 }
 
@@ -153,6 +170,9 @@ function view() {
     case 'receipt': return receiptView();
     case 'rewards': return rewardsView();
     case 'profile': return profileView();
+    case 'goals': return goalsView();
+    case 'airtime': return airtimeView();
+    case 'admin': return adminView();
     default: return authView();
   }
 }
@@ -300,6 +320,7 @@ function homeView() {
       <button class="small secondary" data-go="profile">Me</button>
     </div>
 
+    ${w.is_admin ? `<div class="banner"><span>You are an admin.</span><button class="small" data-go="admin">Admin panel</button></div>` : ''}
     ${w.kyc_verified ? '' : `<div class="banner"><span>Verify your identity to get your funding account and send to banks.</span>
       <button class="small" data-go="verify">Verify</button></div>`}
 
@@ -316,6 +337,9 @@ function homeView() {
       <button class="action" data-go="send"><span class="ico">↗</span>Send</button>
       <button class="action" data-go="deposit"><span class="ico">↙</span>Deposit</button>
       <button class="action" data-go="history"><span class="ico">🧾</span>History</button>
+      <button class="action" data-go="airtime"><span class="ico">📱</span>Airtime</button>
+      <button class="action" data-go="goals"><span class="ico">🎯</span>Goals</button>
+      <button class="action" data-go="rewards"><span class="ico">🎁</span>Rewards</button>
     </div>
 
     <div class="card">
@@ -334,9 +358,27 @@ function homeView() {
   ${nav('home')}`;
 }
 
+// Saved people for the current send type (wallet or bank).
+function benefList() {
+  const type = state.sendType === 'bank' ? 'bank' : 'wallet';
+  const mine = (state.beneficiaries || []).filter((b) => b.type === type);
+  if (!mine.length) return '';
+  return `<div class="card">
+    <p class="sub" style="margin-top:0">Saved people</p>
+    <ul class="list">${mine.map((b) => `<li>
+      <div><div class="t-title">${esc(b.label)}</div><div class="t-meta">${esc(b.accountNumber)}</div></div>
+      <div class="row-between" style="gap:6px">
+        <button class="small" data-act="use-benef" data-id="${esc(b.id)}">Use</button>
+        <button class="small secondary" data-act="del-benef" data-id="${esc(b.id)}" aria-label="Remove">✕</button>
+      </div>
+    </li>`).join('')}</ul>
+  </div>`;
+}
+
 function sendView() {
   const isBank = state.sendType === 'bank';
   const banks = state.banks || [];
+  const p = state.prefill || {};
   return `<div class="app-inner">
     ${backBtn()}
     <div class="topbar"><h2>Send money</h2></div>
@@ -344,34 +386,96 @@ function sendView() {
       <button class="${!isBank ? 'on' : ''}" data-act="send-type" data-type="wallet">To a Legendary wallet</button>
       <button class="${isBank ? 'on' : ''}" data-act="send-type" data-type="bank">To a bank</button>
     </div>
+    ${benefList()}
     <div class="card">
       ${isBank ? `
       <form data-form="send-bank" data-lookup-form>
         <label>Bank
           <select name="bankCode" data-lookup required>
             <option value="">Choose a bank</option>
-            ${banks.map((b) => `<option value="${esc(b.code)}">${esc(b.name)}</option>`).join('')}
+            ${banks.map((b) => `<option value="${esc(b.code)}" ${p.bankCode === b.code ? 'selected' : ''}>${esc(b.name)}</option>`).join('')}
           </select>
         </label>
-        <label>Account number<input name="accountNumber" inputmode="numeric" maxlength="10" pattern="\\d{10}" data-lookup required></label>
+        <label>Account number<input name="accountNumber" inputmode="numeric" maxlength="10" pattern="\\d{10}" data-lookup required value="${esc(p.accountNumber || '')}"></label>
         <div class="recipient"></div>
         <label>Amount (₦)<input name="amount" inputmode="decimal" placeholder="0.00" required></label>
         <p class="note">Bank transfer fee: ${naira(state.bankFeeKobo)}</p>
         <label>Your 4-digit PIN<input name="pin" inputmode="numeric" maxlength="4" pattern="\\d{4}" required></label>
+        <label>Save this person as (optional)<input name="saveAs" maxlength="40" placeholder="e.g. Mum"></label>
         <input type="hidden" name="idemKey" value="${esc(state.idem)}">
         <button type="submit">Send to bank</button>
       </form>` : `
       <form data-form="send-wallet" data-lookup-form>
-        <label>Recipient wallet number<input name="toAccount" inputmode="numeric" maxlength="10" pattern="\\d{10}" data-lookup required></label>
+        <label>Recipient wallet number<input name="toAccount" inputmode="numeric" maxlength="10" pattern="\\d{10}" data-lookup required value="${esc(p.toAccount || '')}"></label>
         <div class="recipient"></div>
         <label>Amount (₦)<input name="amount" inputmode="decimal" placeholder="0.00" required></label>
         <label>Your 4-digit PIN<input name="pin" inputmode="numeric" maxlength="4" pattern="\\d{4}" required></label>
+        <label>Save this person as (optional)<input name="saveAs" maxlength="40" placeholder="e.g. Mum"></label>
         <input type="hidden" name="idemKey" value="${esc(state.idem)}">
         <button type="submit">Send</button>
       </form>`}
     </div>
   </div>
   ${nav('send')}`;
+}
+
+function goalCard(g) {
+  const pct = g.targetKobo ? Math.min(100, Math.round((g.savedKobo / g.targetKobo) * 100)) : 0;
+  return `<div class="card">
+    <div class="row-between"><strong>${esc(g.name)}</strong><span class="muted">${pct}%</span></div>
+    <p class="sub" style="margin:6px 0 10px">${naira(g.savedKobo)} of ${naira(g.targetKobo)}</p>
+    <div class="bar"><span style="width:${pct}%"></span></div>
+    <form data-form="goal-move" style="margin-top:12px">
+      <input type="hidden" name="goalId" value="${esc(g.id)}">
+      <input type="hidden" name="idemKey" value="${newId()}">
+      <label>Direction<select name="direction">
+        <option value="in">Save into this goal (from wallet)</option>
+        <option value="out">Take out (back to wallet)</option>
+      </select></label>
+      <label>Amount (₦)<input name="amount" inputmode="decimal" required></label>
+      <label>Your 4-digit PIN<input name="pin" inputmode="numeric" maxlength="4" pattern="\\d{4}" required></label>
+      <button type="submit">Confirm</button>
+    </form>
+  </div>`;
+}
+
+function goalsView() {
+  const goals = state.goals || [];
+  return `<div class="app-inner">
+    ${backBtn()}
+    <div class="topbar"><h2>Savings goals</h2></div>
+    <p class="sub">Put money aside for a goal. It stays yours, but you cannot spend it until you move it back.</p>
+    ${goals.length ? goals.map(goalCard).join('') : '<div class="card"><p class="muted">No goals yet. Create your first one below.</p></div>'}
+    <div class="card">
+      <h3 style="font-size:17px;margin-bottom:10px">New goal</h3>
+      <form data-form="goal-add">
+        <label>Goal name<input name="name" maxlength="40" required placeholder="e.g. Rent, Laptop"></label>
+        <label>Target (₦)<input name="target" inputmode="decimal" required placeholder="50000"></label>
+        <button type="submit">Create goal</button>
+      </form>
+    </div>
+  </div>${nav('home')}`;
+}
+
+function airtimeView() {
+  const networks = [['MTN', 'MTN'], ['GLO', 'Glo'], ['AIRTEL', 'Airtel'], ['9MOBILE', '9mobile']];
+  return `<div class="app-inner">
+    ${backBtn()}
+    <div class="topbar"><h2>Buy airtime</h2></div>
+    <div class="card">
+      <form data-form="airtime">
+        <label>Network
+          <select name="network">${networks.map(([v, l]) => `<option value="${v}">${l}</option>`).join('')}</select>
+        </label>
+        <label>Phone number<input name="phone" inputmode="tel" placeholder="08012345678" maxlength="11" pattern="0\\d{10}" required></label>
+        <label>Amount (₦)<input name="amount" inputmode="decimal" placeholder="500" required></label>
+        <label>Your 4-digit PIN<input name="pin" inputmode="numeric" maxlength="4" pattern="\\d{4}" required></label>
+        <input type="hidden" name="idemKey" value="${esc(state.idem)}">
+        <button type="submit">Buy airtime</button>
+      </form>
+    </div>
+    <p class="note">If the airtime fails, the money goes back to your wallet.</p>
+  </div>${nav('home')}`;
 }
 
 function depositView() {
@@ -498,6 +602,92 @@ function profileView() {
   </div>${nav('profile')}`;
 }
 
+// ---------- admin panel (admin accounts only; the server checks this on every call) ----------
+async function fetchAdmin(query) {
+  const [stats, users, payouts, bills, settings] = await Promise.all([
+    api('/admin/stats'),
+    api(`/admin/users?q=${encodeURIComponent(query)}`),
+    api('/admin/payouts'),
+    api('/admin/bills'),
+    api('/admin/settings'),
+  ]);
+  return { stats, users, payouts, bills, settings, query };
+}
+
+function adminView() {
+  const a = state.admin;
+  if (!a) return `<div class="app-inner">${backBtn()}<p class="center muted">Could not load the admin panel.</p></div>`;
+  const s = a.stats;
+  const statCell = (label, value) => `<div style="background:var(--card-2);border-radius:14px;padding:12px"><span class="muted" style="font-size:13px">${esc(label)}</span><strong style="display:block;font-size:20px">${esc(value)}</strong></div>`;
+  return `<div class="app-inner">
+    ${backBtn()}
+    <div class="topbar"><h2>Admin panel</h2></div>
+
+    <div class="card">
+      <h3 style="font-size:17px;margin-bottom:10px">Overview</h3>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+        ${statCell('Users', s.totalUsers)}
+        ${statCell('ID verified', s.kycUsers)}
+        ${statCell('Email verified', s.emailUsers)}
+        ${statCell('Transactions (24h)', s.tx24h)}
+        ${statCell('Money held', naira(s.heldKobo))}
+        ${statCell('Payouts queued', s.queuedPayouts)}
+        ${statCell('Airtime pending', s.pendingBills)}
+      </div>
+    </div>
+
+    <div class="card">
+      <h3 style="font-size:17px;margin-bottom:10px">Users</h3>
+      <form data-form="admin-search">
+        <input name="q" value="${esc(a.query || '')}" placeholder="Phone, email, name or wallet number">
+        <button type="submit">Search</button>
+      </form>
+      <ul class="list" style="margin-top:12px">${a.users.length ? a.users.map((u) => `<li>
+        <div>
+          <div class="t-title">${esc(u.name || 'No name yet')}</div>
+          <div class="t-meta">${esc(u.phone)} · ${esc(u.email || '')}</div>
+          <div class="t-meta">Wallet ${esc(u.accountNumber || '-')} · ${naira(u.mainKobo)}</div>
+          <div class="t-meta">${u.kycVerified ? 'ID verified' : 'ID not verified'} · ${u.emailVerified ? 'email ok' : 'email not verified'}</div>
+        </div>
+        <button class="small secondary" data-act="admin-kyc" data-id="${esc(u.id)}" data-to="${u.kycVerified ? 'false' : 'true'}">${u.kycVerified ? 'Unverify' : 'Verify ID'}</button>
+      </li>`).join('') : '<li><span class="muted">No users found.</span></li>'}</ul>
+    </div>
+
+    <div class="card">
+      <h3 style="font-size:17px;margin-bottom:10px">Bank payouts (latest 50)</h3>
+      ${a.payouts.length ? `<ul class="list">${a.payouts.map((p) => `<li>
+        <div><div class="t-title">${naira(p.amountKobo)} to ${esc(p.accountNumber)}</div>
+        <div class="t-meta">${esc(when(p.at))} · bank ${esc(p.bankCode)}</div></div>
+        <div class="t-meta">${esc(p.status)}</div></li>`).join('')}</ul>` : '<p class="muted">No payouts yet.</p>'}
+    </div>
+
+    <div class="card">
+      <h3 style="font-size:17px;margin-bottom:6px">Airtime needing attention</h3>
+      <p class="sub">Pending means the provider did not confirm. Check these on your Flutterwave dashboard.</p>
+      ${a.bills.length ? `<ul class="list" style="margin-top:10px">${a.bills.map((b) => `<li>
+        <div><div class="t-title">${naira(b.amountKobo)} · ${esc(b.network)} · ${esc(b.phone)}</div>
+        <div class="t-meta">${esc(when(b.at))} · ${esc(b.reference)}</div></div>
+        <div class="t-meta">${esc(b.status)}</div></li>`).join('')}</ul>` : '<p class="muted">Nothing to check.</p>'}
+    </div>
+
+    <div class="card">
+      <h3 style="font-size:17px;margin-bottom:6px">Settings</h3>
+      <p class="sub">Amounts are in kobo (100 kobo = ₦1).</p>
+      ${a.settings.map((s2) => `<form data-form="admin-setting" style="margin-top:10px;flex-direction:row;align-items:flex-end">
+        <input type="hidden" name="key" value="${esc(s2.key)}">
+        <label style="flex:1">${esc(s2.key)}<input name="value" inputmode="numeric" value="${esc(s2.value)}" required></label>
+        <button type="submit" class="small" style="width:auto">Save</button>
+      </form>`).join('')}
+    </div>
+
+    <button class="secondary" data-go="home">Go to my wallet</button>
+  </div>`;
+}
+
+function when(t) {
+  return t ? new Date(t).toLocaleString('en-NG', { dateStyle: 'medium', timeStyle: 'short' }) : '';
+}
+
 function txList(items) {
   return `<ul class="list">${items.map((t) => {
     const amt = Number(t.amountKobo || 0);
@@ -587,10 +777,55 @@ const SUBMIT = {
     navigate('home');
   },
 
+  async 'admin-search'(d) {
+    state.admin = await fetchAdmin(d.q.trim());
+    render();
+  },
+
+  async 'admin-setting'(d) {
+    await api('/admin/settings', { method: 'PATCH', body: { key: d.key, value: Number(d.value) } });
+    toast('Setting saved.');
+    state.admin = await fetchAdmin(state.admin?.query || '');
+    render();
+  },
+
+  async 'goal-add'(d) {
+    await api('/goals', { method: 'POST', body: { name: d.name.trim(), targetKobo: toKobo(d.target) } });
+    toast('Goal created.');
+    navigate('goals');
+  },
+
+  async 'goal-move'(d) {
+    await api(`/goals/${encodeURIComponent(d.goalId)}/move`, {
+      method: 'POST',
+      body: { amount: toKobo(d.amount), direction: d.direction, pin: d.pin, idemKey: d.idemKey },
+    });
+    state.wallet = null;
+    toast(d.direction === 'in' ? 'Saved to your goal.' : 'Moved back to your wallet.');
+    navigate('goals');
+  },
+
+  async airtime(d) {
+    try {
+      const r = await api('/bills/airtime', {
+        method: 'POST',
+        body: { network: d.network, phone: d.phone.trim(), amount: toKobo(d.amount), pin: d.pin, idemKey: d.idemKey },
+      });
+      state.wallet = null;
+      state.idem = newId();
+      toast(r.status === 'pending' ? 'Airtime is processing.' : 'Airtime sent.');
+      navigate('home');
+    } catch (e) {
+      // A refunded attempt must not be retried with the same key.
+      if (e.message.startsWith('Airtime could not be sent')) state.idem = newId();
+      throw e;
+    }
+  },
+
   async 'send-wallet'(d) {
     await api('/transfer/internal', {
       method: 'POST',
-      body: { toAccount: d.toAccount.trim(), amount: toKobo(d.amount), pin: d.pin, idemKey: state.idem },
+      body: { toAccount: d.toAccount.trim(), amount: toKobo(d.amount), pin: d.pin, idemKey: state.idem, saveAs: d.saveAs?.trim() || undefined },
     });
     state.idem = newId();
     state.wallet = null;
@@ -601,7 +836,7 @@ const SUBMIT = {
   async 'send-bank'(d) {
     await api('/transfer/bank', {
       method: 'POST',
-      body: { accountNumber: d.accountNumber.trim(), bankCode: d.bankCode, amount: toKobo(d.amount), pin: d.pin, idemKey: state.idem },
+      body: { accountNumber: d.accountNumber.trim(), bankCode: d.bankCode, amount: toKobo(d.amount), pin: d.pin, idemKey: state.idem, saveAs: d.saveAs?.trim() || undefined },
     });
     state.idem = newId();
     state.wallet = null;
@@ -665,6 +900,33 @@ const ACTIONS = {
     navigate('home');
   },
   receipt(el) { state.receiptId = el.dataset.id; navigate('receipt'); },
+  async 'admin-kyc'(el) {
+    try {
+      await api(`/admin/kyc/${encodeURIComponent(el.dataset.id)}`, { method: 'POST', body: { verified: el.dataset.to === 'true' } });
+      state.admin = await fetchAdmin(state.admin?.query || '');
+      render();
+      toast(el.dataset.to === 'true' ? 'ID verified.' : 'ID unverified.');
+    } catch (e) { toast(e.message); }
+  },
+  'use-benef'(el) {
+    const b = (state.beneficiaries || []).find((x) => String(x.id) === el.dataset.id);
+    if (!b) return;
+    state.sendType = b.type === 'bank' ? 'bank' : 'wallet';
+    state.prefill = b.type === 'bank'
+      ? { accountNumber: b.accountNumber, bankCode: b.bankCode }
+      : { toAccount: b.accountNumber };
+    render();
+    const form = $app.querySelector('form[data-lookup-form]');
+    if (form) runLookup(form);
+  },
+  async 'del-benef'(el) {
+    try {
+      await api(`/beneficiaries/${encodeURIComponent(el.dataset.id)}`, { method: 'DELETE' });
+      state.beneficiaries = (state.beneficiaries || []).filter((x) => String(x.id) !== el.dataset.id);
+      render();
+      toast('Removed.');
+    } catch (e) { toast(e.message); }
+  },
   async 'resend-verify'() {
     try { await api('/auth/resend-verify', { method: 'POST' }); toast('A new code is on its way.'); } catch (e) { toast(e.message); }
   },
