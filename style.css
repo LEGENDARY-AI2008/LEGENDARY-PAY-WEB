@@ -142,6 +142,8 @@ button.secondary { background: var(--card-2); border: 1px solid var(--line); }
 button.link {
   background: none; width: auto; padding: 6px 0; color: var(--brand-2); font-weight: 600; font-size: 14px;
 }
+.back-row { margin: 8px 0 4px; }
+.back-btn { width: auto; padding: 6px 0; font-size: 15px; color: var(--brand-2); }
 button.small { width: auto; padding: 8px 12px; font-size: 14px; border-radius: 12px; }
 
 /* tabs */
@@ -171,7 +173,7 @@ button.small { width: auto; padding: 8px 12px; font-size: 14px; border-radius: 1
   position: fixed; left: 0; right: 0; bottom: 0;
   background: rgba(14, 7, 48, .96);
   border-top: 1px solid var(--line);
-  display: grid; grid-template-columns: repeat(4, 1fr);
+  display: grid; grid-template-columns: repeat(5, 1fr);
   padding: 8px 8px calc(8px + env(safe-area-inset-bottom));
   backdrop-filter: blur(10px);
   z-index: 10;
