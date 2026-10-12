@@ -762,6 +762,9 @@ const ACTIONS = {
   'bill-cancel'(el) { billCancel(el.dataset.id); },
   'bank-next'() { bankFlow().step = 2; render(); },
   async 'admin-support'(el) { await adminSupportToggle(el.dataset.id); },
+  async 'bill-debug'() {
+    try { state.billDebug = await api('/admin/bill-debug'); render(); } catch (e) { toast(e.message); }
+  },
   async 'bank-pick'(el) { await bankPick(el); },
   'bank-quick'(el) { bankQuick(el); },
   'bank-sheet-close'() { bankFlow().sheet = null; render(); },

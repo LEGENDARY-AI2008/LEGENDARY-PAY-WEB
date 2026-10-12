@@ -103,7 +103,7 @@ adminView = function () {
     return `<button class="small secondary" data-act="admin-support" data-id="${id}">${isSupport ? 'Remove support' : 'Promote to support'}</button>\n        ${m}`;
   });
   return html.replace('<div class="topbar"><h2>Admin panel</h2></div>',
-    '<div class="topbar"><h2>Admin panel</h2></div>\n    ' + interestCard() + '\n    ' + broadcastCard());
+    '<div class="topbar"><h2>Admin panel</h2></div>\n    ' + billDebugCard() + '\n    ' + interestCard() + '\n    ' + broadcastCard());
 };
 
 // ---------- support tools screen ----------
@@ -401,4 +401,15 @@ async function adminSupportToggle(id) {
     state.admin = await fetchAdmin(state.admin?.query || '');
     render();
   } catch (e) { toast(e.message); }
+}
+
+// ---------- admin: bill provider diagnostic (shows Flutterwave's raw provider list, no keys) ----------
+function billDebugCard() {
+  const d = state.billDebug;
+  return `<div class="card">
+    <h3 style="font-size:17px;margin-bottom:6px">Bill providers check</h3>
+    <p class="sub">Shows what our bill provider returns. Use it to fix empty provider lists.</p>
+    <button type="button" class="secondary" data-act="bill-debug" style="margin-top:8px">Load provider data</button>
+    ${d ? `<pre style="white-space:pre-wrap;font-size:11px;max-height:320px;overflow:auto;background:var(--card-2);padding:10px;border-radius:12px;margin-top:10px">${esc(JSON.stringify(d, null, 2))}</pre>` : ''}
+  </div>`;
 }
