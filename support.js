@@ -1,14 +1,26 @@
 // Live chat support screens. Users chat with the team on the support screen. Admins reply
 // from the admin panel. Loaded before app.js; uses helpers from screens.js and app.js.
 
+// Shared chat styles (used by the customer chat and the admin panel).
+const CHAT_CSS = `<style>
+.cs-thread{height:calc(100vh - 300px);min-height:260px;overflow-y:auto;padding:10px;border-radius:16px;background:var(--card-2)}
+.cs-bar{display:flex;align-items:flex-end;gap:8px;margin-top:10px}
+.cs-field{flex:1;display:flex;align-items:center;background:var(--card);border:1px solid var(--line);border-radius:24px;padding:0 12px;min-width:0}
+.cs-field input{flex:1;min-width:0;border:none;background:transparent;margin:0;padding:11px 0;box-shadow:none;width:auto}
+.cs-icon{width:40px;height:40px;border-radius:50%;border:none;background:transparent;padding:0;font-size:20px;flex:0 0 auto;color:var(--muted,#8A8398);width:40px}
+.cs-send{width:46px;height:46px;border-radius:50%;border:none;background:var(--brand,#7B3FF2);color:#fff;font-size:18px;padding:0;flex:0 0 auto;width:46px}
+.cs-banner{background:var(--card-2);border-radius:14px;padding:12px;margin-top:10px;font-size:14px}
+</style>`;
+
 // mine = the sender whose messages sit on the right side of this view.
 function chatBubble(m, mine) {
   const right = m.from === mine;
   return `<div style="display:flex;justify-content:${right ? 'flex-end' : 'flex-start'};margin:6px 0">
     <div style="max-width:80%;padding:10px 12px;border-radius:14px;white-space:pre-wrap;word-break:break-word;
       background:${right ? 'var(--brand)' : 'var(--card-2)'};color:${right ? '#fff' : 'var(--text)'}">
-      ${esc(m.body)}
-      <div style="font-size:11px;opacity:.75;margin-top:4px">${esc(when(m.at))}</div>
+      ${m.image ? `<img src="${m.image}" alt="Picture" style="display:block;max-width:100%;border-radius:10px;margin-bottom:${m.body ? '6px' : '0'}">` : ''}
+      ${m.body ? esc(m.body) : ''}
+      ${m.at ? `<div style="font-size:11px;opacity:.75;margin-top:4px">${esc(when(m.at))}</div>` : ''}
     </div></div>`;
 }
 
@@ -61,11 +73,16 @@ function adminSupportCard() {
       <div id="admin-msgs" class="card" style="margin-top:10px;max-height:40vh;overflow-y:auto;background:var(--card-2)">
         ${chatMessagesHtml(open.messages, 'admin')}
       </div>
-      <form data-form="support-reply" style="margin-top:10px;flex-direction:row;align-items:flex-end">
-        <input type="hidden" name="id" value="${esc(open.id)}">
-        <label style="flex:1">Reply<input name="body" maxlength="500" required autocomplete="off"></label>
-        <button type="submit" class="small" style="width:auto">Reply</button>
-      </form>
+      ${CHAT_CSS}
+      <div class="cs-bar">
+        <button type="button" class="cs-icon" data-pick="admin-file" title="Send a picture">📎</button>
+        <input type="file" id="admin-file" accept="image/*" hidden data-admin-id="${esc(open.id)}">
+        <form data-form="support-reply" class="cs-bar" style="flex:1;margin:0">
+          <input type="hidden" name="id" value="${esc(open.id)}">
+          <div class="cs-field"><input id="admin-reply-body" name="body" maxlength="500" autocomplete="off" placeholder="Type a reply"></div>
+          <button type="submit" class="cs-send" aria-label="Send">➤</button>
+        </form>
+      </div>
     </div>` : ''}
   </div>`;
 }

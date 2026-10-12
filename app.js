@@ -649,7 +649,7 @@ const SUBMIT = {
 
   async 'report-tx'(d) {
     await api(`/transactions/${encodeURIComponent(d.id)}/report`, { method: 'POST', body: { message: d.message.trim() } });
-    toast('Report sent. Our team will reply in Live chat.');
+    toast('Report sent. Our team will reply in Support.');
     render();
   },
 

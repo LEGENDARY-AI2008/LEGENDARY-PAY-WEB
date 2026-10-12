@@ -185,8 +185,11 @@ function homeView() {
       </div>
       <div class="amount" style="font-size:28px;margin:2px 0 6px">${hidden ? '₦ ••••••' : naira(w.mainKobo)}</div>
       <div class="row">
-        <span>Wallet ${esc(w.account_number)}</span>
-        <button class="small secondary" data-act="copy" data-copy="${esc(w.account_number)}">Copy</button>
+        ${w.virtual_account
+          ? `<span>Account ${esc(w.virtual_account)}${w.virtual_bank ? ` · ${esc(w.virtual_bank)}` : ''}</span>
+        <button class="small secondary" data-act="copy" data-copy="${esc(w.virtual_account)}">Copy</button>`
+          : `<span>Wallet ${esc(w.account_number)}</span>
+        <button class="small secondary" data-act="copy" data-copy="${esc(w.account_number)}">Copy</button>`}
       </div>
       <div style="margin-top:10px"><button class="small" style="background:#fff;color:#4B1FB0" data-go="deposit">+ Add money</button></div>
     </div>
@@ -268,7 +271,7 @@ function moreView() {
         ${gItem('data-go="limits"', '🔓', 'Limits')}
         ${gItem('data-go="security"', '🛡️', 'Security')}
         ${gItem('data-go="notifications"', '🔔', 'Alerts')}
-        ${gItem('data-go="support"', '💬', 'Live chat')}
+        ${gItem('data-go="support"', '💬', 'Support')}
         ${gItem('data-go="help"', '🎧', 'Help')}
         ${gItem('data-go="settings"', '⚙️', 'Settings')}
       </div>
@@ -302,7 +305,7 @@ function meView() {
 
     <div class="card">
       ${rowLine('Profile info', '›', `${w.phone} · ${w.email}`, 'data-go="profile"')}
-      ${rowLine('Bank account', '›', w.account_number, 'data-go="deposit"')}
+      ${rowLine('Bank account', '›', w.virtual_account || w.account_number, 'data-go="deposit"')}
       ${rowLine('Savings goals', '›', '', 'data-go="goals"')}
       ${rowLine('Invitation', '›', 'Earn rewards for friends', 'data-go="rewards"')}
       ${rowLine('Help', '›', '', 'data-go="help"')}
@@ -362,6 +365,7 @@ function sendView() {
       <button type="button" class="secondary" data-act="scan-qr">Scan QR code</button>
       <button type="button" class="secondary" data-act="upload-qr">Upload QR image</button>
     </div>
+    ${state.wallet && state.wallet.account_number ? `<p class="sub" style="margin:0 0 10px">Your Legendary Pay wallet number: <strong>${esc(state.wallet.account_number)}</strong></p>` : ''}
     <form data-form="send-wallet" data-lookup-form data-approval>
       <label>Recipient wallet number<input name="toAccount" inputmode="numeric" maxlength="10" pattern="\\d{10}" data-lookup required value="${esc(p.toAccount || '')}"></label>
       <div class="recipient"></div>
