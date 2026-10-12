@@ -95,7 +95,13 @@ function broadcastCard() {
 
 const _adminViewStaffBase = adminView;
 adminView = function () {
-  const html = _adminViewStaffBase().replace('Airtime needing attention', 'Bills needing attention');
+  const base = _adminViewStaffBase().replace('Airtime needing attention', 'Bills needing attention');
+  // A "Promote to support" button in front of each customer in the user list.
+  const html = base.replace(/<button class="small secondary" data-act="admin-kyc" data-id="([^"]+)"/g, (m, id) => {
+    const u = ((state.admin && state.admin.users) || []).find((x) => x.id === id);
+    const isSupport = !!(u && u.staffRole === 'support');
+    return `<button class="small secondary" data-act="admin-support" data-id="${id}">${isSupport ? 'Remove support' : 'Promote to support'}</button>\n        ${m}`;
+  });
   return html.replace('<div class="topbar"><h2>Admin panel</h2></div>',
     '<div class="topbar"><h2>Admin panel</h2></div>\n    ' + interestCard() + '\n    ' + broadcastCard());
 };
@@ -377,4 +383,22 @@ async function adminInterest(d) {
   toast(`Saved ${naira(r.kobo)} interest.`);
   state.admin = await fetchAdmin(state.admin?.query || '');
   render();
+}
+
+// Admin: promote a customer to support agent, or remove support access, from the user list.
+async function adminSupportToggle(id) {
+  const u = ((state.admin && state.admin.users) || []).find((x) => x.id === id);
+  if (!u) return;
+  const promote = u.staffRole !== 'support';
+  const who = u.name || u.email || 'this customer';
+  const msg = promote
+    ? `Promote ${who} to support? They will see Support tools and the live chat inbox after they sign in again.`
+    : `Remove support access from ${who}?`;
+  if (!confirm(msg)) return;
+  try {
+    await api('/admin/staff', { method: 'POST', body: { email: u.email, role: promote ? 'support' : 'none' } });
+    toast(promote ? 'Promoted to support.' : 'Support access removed.');
+    state.admin = await fetchAdmin(state.admin?.query || '');
+    render();
+  } catch (e) { toast(e.message); }
 }

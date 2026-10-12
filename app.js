@@ -761,6 +761,7 @@ const ACTIONS = {
   'push-on'() { pushOn(); },
   'bill-cancel'(el) { billCancel(el.dataset.id); },
   'bank-next'() { bankFlow().step = 2; render(); },
+  async 'admin-support'(el) { await adminSupportToggle(el.dataset.id); },
   async 'bank-pick'(el) { await bankPick(el); },
   'bank-quick'(el) { bankQuick(el); },
   'bank-sheet-close'() { bankFlow().sheet = null; render(); },
