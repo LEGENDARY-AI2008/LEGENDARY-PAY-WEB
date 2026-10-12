@@ -93,7 +93,7 @@ function authView() {
         <button type="button" class="link" data-act="auth-mode" data-mode="forgot">Forgot PIN?</button>
       </form>` : `
       <form data-form="signup">
-        <label>Phone number<input name="phone" inputmode="tel" placeholder="08012345678" maxlength="11" pattern="0\\d{10}" required></label>
+        <label>Phone number (with country code)<input name="phone" inputmode="tel" value="+234" placeholder="+234 8012345678" maxlength="20" required></label>
         <label>Email<input name="email" type="email" required autocomplete="email"></label>
         <label>Create a 4-digit PIN<input name="pin" inputmode="numeric" maxlength="4" pattern="\\d{4}" required></label>
         <label>Referral code (optional)<input name="referralCode" autocomplete="off"></label>
