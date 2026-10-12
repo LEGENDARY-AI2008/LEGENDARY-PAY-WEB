@@ -410,6 +410,7 @@ function billDebugCard() {
     <h3 style="font-size:17px;margin-bottom:6px">Bill providers check</h3>
     <p class="sub">Shows what our bill provider returns. Use it to fix empty provider lists.</p>
     <button type="button" class="secondary" data-act="bill-debug" style="margin-top:8px">Load provider data</button>
-    ${d ? `<pre style="white-space:pre-wrap;font-size:11px;max-height:320px;overflow:auto;background:var(--card-2);padding:10px;border-radius:12px;margin-top:10px">${esc(JSON.stringify(d, null, 2))}</pre>` : ''}
+    ${d ? `<button type="button" class="secondary" data-act="bill-copy" style="margin-top:10px">Copy output</button>
+    <pre id="bill-debug-out" style="white-space:pre-wrap;font-size:11px;max-height:320px;overflow:auto;background:var(--card-2);padding:10px;border-radius:12px;margin-top:10px;user-select:text">${esc(JSON.stringify(d, null, 2))}</pre>` : ''}
   </div>`;
 }

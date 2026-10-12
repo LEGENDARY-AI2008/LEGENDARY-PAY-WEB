@@ -765,6 +765,27 @@ const ACTIONS = {
   async 'bill-debug'() {
     try { state.billDebug = await api('/admin/bill-debug'); render(); } catch (e) { toast(e.message); }
   },
+  async 'bill-copy'() {
+    const text = state.billDebug ? JSON.stringify(state.billDebug, null, 2) : '';
+    if (!text) { toast('Nothing to copy yet'); return; }
+    let ok = false;
+    try {
+      if (navigator.clipboard && window.isSecureContext) { await navigator.clipboard.writeText(text); ok = true; }
+    } catch (e) { ok = false; }
+    if (!ok) {
+      try {
+        const ta = document.createElement('textarea');
+        ta.value = text; ta.setAttribute('readonly', ''); ta.style.position = 'fixed'; ta.style.opacity = '0';
+        document.body.appendChild(ta); ta.select(); ta.setSelectionRange(0, text.length);
+        ok = document.execCommand('copy'); ta.remove();
+      } catch (e) { ok = false; }
+    }
+    if (!ok) {
+      const pre = document.getElementById('bill-debug-out');
+      if (pre) { const r = document.createRange(); r.selectNodeContents(pre); const sel = window.getSelection(); sel.removeAllRanges(); sel.addRange(r); }
+    }
+    toast(ok ? 'Copied' : 'Text selected. Press and hold to copy');
+  },
   async 'bank-pick'(el) { await bankPick(el); },
   'bank-quick'(el) { bankQuick(el); },
   'bank-sheet-close'() { bankFlow().sheet = null; render(); },
