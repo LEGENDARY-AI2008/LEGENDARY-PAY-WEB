@@ -1,0 +1,214 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex">
+  <title>Legendary Pay Admin</title>
+  <link rel="stylesheet" href="style.css">
+  <style>
+    [hidden] { display: none !important; }
+    .admin-wrap { padding: 16px 16px 40px; max-width: 760px; margin: 0 auto; }
+    .admin-wrap h3 { font-size: 17px; margin-bottom: 10px; }
+    .stat-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; }
+    .stat-grid div { background: var(--card-2); border-radius: 14px; padding: 12px; }
+    .stat-grid strong { display: block; font-size: 20px; }
+    .tbl { width: 100%; border-collapse: collapse; font-size: 14px; }
+    .tbl th, .tbl td { text-align: left; padding: 8px 6px; border-bottom: 1px solid var(--line); vertical-align: top; }
+    .tbl th { color: var(--muted); font-weight: 600; }
+    .search { display: flex; gap: 8px; margin-bottom: 10px; }
+    .search input { flex: 1; }
+    .search button { width: auto; }
+    .setting-row { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
+    .setting-row code { flex: 1; font-size: 13px; color: var(--muted); }
+    .setting-row input { width: 130px; padding: 10px; }
+    .setting-row button { width: auto; padding: 10px 12px; }
+    .warn { color: var(--gold); font-size: 13px; }
+  </style>
+</head>
+<body>
+  <div class="admin-wrap">
+    <div class="topbar">
+      <h2>Admin</h2>
+      <a href="index.html" style="color: var(--brand-2); font-weight: 600; font-size: 14px;">Back to app</a>
+    </div>
+
+    <div class="card" id="login">
+      <form id="loginForm">
+        <label>Phone or email<input name="identifier" required autocomplete="username"></label>
+        <label>4-digit PIN<input name="pin" inputmode="numeric" maxlength="4" pattern="\d{4}" required autocomplete="current-password"></label>
+        <button type="submit">Log in to admin</button>
+      </form>
+      <p class="note warn" style="margin-top:12px">Only admins can use this page. Use your normal login.</p>
+    </div>
+
+    <div id="panel" hidden>
+      <div class="card">
+        <h3>Overview</h3>
+        <div class="stat-grid" id="stats"></div>
+      </div>
+
+      <div class="card">
+        <h3>Users</h3>
+        <form class="search" id="search">
+          <input name="q" placeholder="Phone, email, name or wallet number">
+          <button class="small" type="submit">Search</button>
+        </form>
+        <div style="overflow-x:auto"><table class="tbl" id="users"></table></div>
+      </div>
+
+      <div class="card">
+        <h3>Bank payouts (latest 50)</h3>
+        <div style="overflow-x:auto"><table class="tbl" id="payouts"></table></div>
+      </div>
+
+      <div class="card">
+        <h3>Airtime needing attention</h3>
+        <p class="note">Pending means the provider did not confirm. Check these on your Flutterwave dashboard.</p>
+        <div style="overflow-x:auto"><table class="tbl" id="bills"></table></div>
+      </div>
+
+      <div class="card">
+        <h3>Settings (amounts in kobo, 100 = ₦1)</h3>
+        <div id="settings"></div>
+      </div>
+
+      <button class="secondary" id="signout" type="button">Sign out of admin</button>
+    </div>
+  </div>
+
+  <script src="config.js"></script>
+  <script>
+    const API = (window.APP_CONFIG && window.APP_CONFIG.API_BASE) || '';
+    const TOKEN_NAME = 'lp_admin_token';
+    const $ = (id) => document.getElementById(id);
+    const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+    const naira = (k) => '₦' + (Number(k || 0) / 100).toLocaleString('en-NG', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    const when = (t) => (t ? new Date(t).toLocaleString('en-NG', { dateStyle: 'medium', timeStyle: 'short' }) : '');
+    // Kept only for this browser tab (sessionStorage). Cleared when the tab closes or on sign out.
+    const getToken = () => { try { return sessionStorage.getItem(TOKEN_NAME) || ''; } catch { return ''; } };
+    const setToken = (v) => { try { sessionStorage.setItem(TOKEN_NAME, v); } catch {} };
+    const clearToken = () => { try { sessionStorage.removeItem(TOKEN_NAME); } catch {} };
+
+    async function adminApi(path, opts = {}) {
+      let r;
+      try {
+        r = await fetch(API + path, {
+          method: opts.method || 'GET',
+          headers: { 'content-type': 'application/json', authorization: 'Bearer ' + getToken() },
+          body: opts.body ? JSON.stringify(opts.body) : undefined,
+        });
+      } catch { throw new Error('Cannot reach the server.'); }
+      const j = await r.json().catch(() => ({}));
+      if (r.status === 401) { clearToken(); showPanel(false); throw new Error('Your session has ended. Log in again.'); }
+      if (r.status === 403) { clearToken(); showPanel(false); throw new Error('This account is not an admin.'); }
+      if (!r.ok) throw new Error(j.error || 'Request failed.');
+      return j;
+    }
+
+    function showPanel(on) {
+      $('login').hidden = on;
+      $('panel').hidden = !on;
+    }
+
+    async function loadStats() {
+      const s = await adminApi('/admin/stats');
+      $('stats').innerHTML = [
+        ['Users', s.totalUsers], ['ID verified', s.kycUsers], ['Email verified', s.emailUsers], ['Transactions (24h)', s.tx24h],
+        ['Money held in wallets', naira(s.heldKobo)], ['Payouts queued', s.queuedPayouts], ['Airtime pending', s.pendingBills],
+      ].map(([l, v]) => `<div><span class="muted">${esc(l)}</span><strong>${esc(v)}</strong></div>`).join('');
+    }
+
+    async function loadUsers(q = '') {
+      const users = await adminApi(`/admin/users?q=${encodeURIComponent(q)}`);
+      $('users').innerHTML = `<tr><th>User</th><th>Wallet</th><th>Balance</th><th>ID</th><th></th></tr>` +
+        (users.length ? users.map((u) => `<tr>
+          <td><strong>${esc(u.name || 'No name yet')}</strong><br><span class="muted">${esc(u.phone)}</span><br><span class="muted">${esc(u.email)}</span></td>
+          <td>${esc(u.accountNumber)}</td>
+          <td>${naira(u.mainKobo)}</td>
+          <td>${u.kycVerified ? 'Verified' : 'Not verified'}<br><span class="muted">${u.emailVerified ? 'Email ok' : 'Email not verified'}</span></td>
+          <td><button class="small secondary" data-kyc-id="${esc(u.id)}" data-kyc-to="${u.kycVerified ? 'false' : 'true'}">${u.kycVerified ? 'Unverify' : 'Verify'}</button></td>
+        </tr>`).join('') : '<tr><td colspan="5" class="muted">No users found.</td></tr>');
+    }
+
+    async function loadPayouts() {
+      const rows = await adminApi('/admin/payouts');
+      $('payouts').innerHTML = `<tr><th>When</th><th>Amount</th><th>Bank account</th><th>Status</th></tr>` +
+        (rows.length ? rows.map((p) => `<tr>
+          <td>${esc(when(p.at))}</td><td>${naira(p.amountKobo)}</td>
+          <td>${esc(p.accountNumber)}<br><span class="muted">bank ${esc(p.bankCode)}</span></td>
+          <td>${esc(p.status)}</td></tr>`).join('') : '<tr><td colspan="4" class="muted">No payouts yet.</td></tr>');
+    }
+
+    async function loadBills() {
+      const rows = await adminApi('/admin/bills');
+      $('bills').innerHTML = `<tr><th>When</th><th>Phone</th><th>Amount</th><th>Status</th><th>Reference</th></tr>` +
+        (rows.length ? rows.map((b) => `<tr>
+          <td>${esc(when(b.at))}</td><td>${esc(b.phone)}<br><span class="muted">${esc(b.network)}</span></td>
+          <td>${naira(b.amountKobo)}</td><td>${esc(b.status)}<br><span class="muted">${esc(b.error || '')}</span></td>
+          <td style="word-break:break-all">${esc(b.reference)}</td></tr>`).join('') : '<tr><td colspan="5" class="muted">Nothing to check.</td></tr>');
+    }
+
+    async function loadSettings() {
+      const rows = await adminApi('/admin/settings');
+      $('settings').innerHTML = rows.map((s) => `<div class="setting-row">
+        <code>${esc(s.key)}</code>
+        <input type="number" min="0" step="1" value="${esc(s.value)}" data-setting="${esc(s.key)}">
+        <button class="small" data-save-setting="${esc(s.key)}" type="button">Save</button>
+      </div>`).join('');
+    }
+
+    async function loadAll() {
+      await Promise.all([loadStats(), loadUsers(), loadPayouts(), loadBills(), loadSettings()]);
+    }
+
+    $('loginForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const d = Object.fromEntries(new FormData(e.target));
+      try {
+        const r = await fetch(API + '/auth/login', {
+          method: 'POST',
+          headers: { 'content-type': 'application/json' },
+          body: JSON.stringify({ identifier: d.identifier.trim(), pin: d.pin }),
+        });
+        const j = await r.json().catch(() => ({}));
+        if (!r.ok) throw new Error(j.error || 'Log in failed.');
+        setToken(j.token);
+        await loadAll();
+        showPanel(true);
+      } catch (err) { clearToken(); alert(err.message); }
+    });
+
+    $('search').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      try { await loadUsers(new FormData(e.target).get('q').trim()); }
+      catch (err) { alert(err.message); }
+    });
+
+    document.addEventListener('click', async (e) => {
+      const kyc = e.target.closest('[data-kyc-id]');
+      if (kyc) {
+        try {
+          await adminApi(`/admin/kyc/${encodeURIComponent(kyc.dataset.kycId)}`, { method: 'POST', body: { verified: kyc.dataset.kycTo === 'true' } });
+          await loadUsers();
+        } catch (err) { alert(err.message); }
+        return;
+      }
+      const save = e.target.closest('[data-save-setting]');
+      if (save) {
+        const key = save.dataset.saveSetting;
+        const input = document.querySelector(`[data-setting="${CSS.escape(key)}"]`);
+        try {
+          await adminApi('/admin/settings', { method: 'PATCH', body: { key, value: Number(input.value) } });
+          alert('Saved.');
+        } catch (err) { alert(err.message); }
+        return;
+      }
+      if (e.target.id === 'signout') { clearToken(); showPanel(false); }
+    });
+
+    // Reopen the panel automatically if this tab still has a session.
+    if (getToken()) loadAll().then(() => showPanel(true)).catch(() => { clearToken(); showPanel(false); });
+  </script>
+</body>
+</html>

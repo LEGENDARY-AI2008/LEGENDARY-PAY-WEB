@@ -258,8 +258,10 @@ async function loadFor(screen, opts) {
       state.billers = null;
       state.billItems = [];
       g(`/bills/billers?category=${encodeURIComponent(state.billCat || 'DATA')}`, 'billers');
+      g('/bills/schedules', 'billSchedules');
       break;
     case 'support': g('/support', 'support'); break;
+    case 'staff': tasks.push(loadStaff()); break;
     case 'receipt':
       state.receipt = null;
       tasks.push(api(`/wallet/receipt/${encodeURIComponent(state.receiptId)}`)
@@ -321,6 +323,7 @@ const VIEWS = {
   settings: () => settingsView(),
   profile: () => profileView(),
   admin: () => adminView(),
+  staff: () => staffView(),
 };
 
 function view() {
@@ -462,6 +465,15 @@ const SUBMIT = {
     render();
   },
 
+  async 'staff-search'(d) { await staffSearch(d.q); },
+  async 'staff-adjust'(d) { await staffAdjust(d); },
+  async 'staff-reverse'(d) { await staffReverse(d); },
+  async 'staff-role'(d) { await staffRole(d); },
+  async 'admin-broadcast'(d) { await adminBroadcast(d); },
+  async 'admin-interest'(d) { await adminInterest(d); },
+  async 'bank-check'(d) { await bankCheck(d); },
+  'bank-review'(d) { bankReview(d); },
+  async 'bank-pay'(d) { await bankPay(d); },
   async 'admin-setting'(d) {
     await api('/admin/settings', { method: 'PATCH', body: { key: d.key, value: Number(d.value) } });
     toast('Setting saved.');
@@ -510,12 +522,13 @@ const SUBMIT = {
 
   async 'bill-pay'(d) {
     try {
-      const r = await api('/bills/pay', {
+      const r = await api(d.every ? '/bills/repeat' : '/bills/pay', {
         method: 'POST',
         body: {
           category: d.category, biller: d.biller, item: d.item, customer: d.customer.trim(),
           amount: d.amount ? toKobo(d.amount) : undefined,
           pin: d.pin, approval: d.approval, idemKey: d.idemKey,
+          every: d.every ? Number(d.every) : undefined,
         },
       });
       state.wallet = null;
@@ -649,7 +662,7 @@ const SUBMIT = {
   async 'support-reply'(d) {
     await api(`/admin/support/${encodeURIComponent(d.id)}/reply`, { method: 'POST', body: { body: d.body.trim() } });
     state.adminThread = await api(`/admin/support/${encodeURIComponent(d.id)}`);
-    state.admin = await fetchAdmin(state.admin?.query || '');
+    state.admin = { ...state.admin, support: await api('/admin/support') };
     render();
   },
 
@@ -743,10 +756,36 @@ const ACTIONS = {
     await navigate('history');
   },
   'install-app'() { installApp(); },
+  'staff-pick'(el) { staffPick(el.dataset.id); },
+  'staff-refresh'() { loadStaff().then(render); },
+  'push-on'() { pushOn(); },
+  'bill-cancel'(el) { billCancel(el.dataset.id); },
+  'bank-next'() { bankFlow().step = 2; render(); },
+  async 'bank-pick'(el) { await bankPick(el); },
+  'bank-quick'(el) { bankQuick(el); },
+  'bank-sheet-close'() { bankFlow().sheet = null; render(); },
+  'bank-continue'() { bankFlow().sheet = 'confirm'; render(); },
+  'bank-receipt'() { bankReceipt(); },
+  'bank-home'() { state.bankFlow = null; navigate('home'); },
+  async 'statement-pdf'(el) {
+    try {
+      const d = Object.fromEntries(new FormData(el.closest('form')));
+      const r = statementRange(d.period, d.when);
+      const rows = await api(`/transactions?from=${r.from}&to=${r.to}&limit=5000`);
+      if (!rows.length) { toast('No transactions in that period.'); return; }
+      downloadStatementPdf(r.label, rows);
+    } catch (e) { toast(e.message); }
+  },
   'dismiss-install'() { dismissInstall(); },
 
   back() {
     if (state.screen === 'login') { state.authMode = 'login'; render(); return; }
+    if (state.screen === 'send' && state.sendType === 'bank' && state.bankFlow) {
+      const f = state.bankFlow;
+      if (f.sheet) { f.sheet = null; render(); return; }
+      if (f.step === 2 && !f.result) { f.step = 1; render(); return; }
+      state.bankFlow = null;
+    }
     if (state.screen === 'verify-email') { logout(); return; }
     const prev = state.stack.pop();
     navigate(prev || 'home');
@@ -755,6 +794,7 @@ const ACTIONS = {
   logout() { logout(); },
 
   'go-send'(el) {
+    state.bankFlow = null;
     state.sendType = el.dataset.type === 'bank' ? 'bank' : 'wallet';
     navigate('send', { push: true });
   },
@@ -902,7 +942,7 @@ const ACTIONS = {
     try {
       await api(`/admin/support/${encodeURIComponent(el.dataset.id)}/close`, { method: 'POST' });
       state.adminThread = null;
-      state.admin = await fetchAdmin(state.admin?.query || '');
+      state.admin = { ...state.admin, support: await api('/admin/support') };
       render();
       toast('Chat closed.');
     } catch (e) { toast(e.message); }

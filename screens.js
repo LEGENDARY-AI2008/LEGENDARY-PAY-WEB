@@ -158,15 +158,14 @@ function homeView() {
   const w = state.wallet;
   if (!w) return loadingView('Loading your wallet…');
   const ck = state.checkin || {};
-  const recent = (state.history || []).slice(0, 1);
   const unread = (state.notifications || []).filter((n) => !n.read).length;
   const due = (state.reminders || []).filter((x) => daysUntil(x.due) <= 3);
   const hidden = store.get('lp_hide') === '1';
   return `<div class="app-inner">
-    <div class="row-between" style="padding:6px 0 12px">
+    <div class="row-between" style="padding:4px 0 10px">
       <div class="row-between" style="gap:10px">
-        <div class="avatar" style="width:40px;height:40px;font-size:15px">${esc(initials(w.full_name || w.email))}</div>
-        <div><div class="muted" style="font-size:13px">Hi,</div><strong>${esc(firstName(w))}</strong></div>
+        <div class="avatar" style="width:36px;height:36px;font-size:14px">${esc(initials(w.full_name || w.email))}</div>
+        <div><div class="muted" style="font-size:12px">Hi,</div><strong>${esc(firstName(w))}</strong></div>
       </div>
       <div class="row-between" style="gap:6px">
         <button class="small secondary" data-go="notifications" aria-label="Notifications">🔔${unread ? '<span class="dot-unread"></span>' : ''}</button>
@@ -179,49 +178,44 @@ function homeView() {
     ${w.kyc_verified ? '' : `<div class="banner"><span>Verify your identity to get your funding account and send to banks.</span><button class="small" data-go="verify">Verify</button></div>`}
     ${due.length ? `<div class="notice">Reminder: <strong>${esc(due[0].title)}</strong> is due ${esc(due[0].due)}. <button class="link" data-go="reminders">See reminders</button></div>` : ''}
 
-    <div class="card hero">
+    <div class="card hero" style="padding:16px 18px">
       <div class="row-between">
         <span class="label">Available balance</span>
         <button class="small secondary" data-act="toggle-hide">${hidden ? 'Show' : 'Hide'}</button>
       </div>
-      <div class="amount">${hidden ? '₦ ••••••' : naira(w.mainKobo)}</div>
+      <div class="amount" style="font-size:28px;margin:2px 0 6px">${hidden ? '₦ ••••••' : naira(w.mainKobo)}</div>
       <div class="row">
         <span>Wallet ${esc(w.account_number)}</span>
         <button class="small secondary" data-act="copy" data-copy="${esc(w.account_number)}">Copy</button>
       </div>
-      <div style="margin-top:12px"><button class="small" style="background:#fff;color:#4B1FB0" data-go="deposit">+ Add money</button></div>
-    </div>
-
-    ${recent.length ? `<div class="card" style="padding:14px 18px;cursor:pointer" data-go="history">
-      <div class="row-between"><span>${esc(TX_LABELS[recent[0].kind] || recent[0].kind)} · <span class="muted">${esc(when(recent[0].at))}</span></span>
-      <span class="${recent[0].amountKobo < 0 ? 'amt-out' : 'amt-in'}">${recent[0].amountKobo < 0 ? '-' : '+'}${naira(Math.abs(recent[0].amountKobo))}</span></div>
-    </div>` : ''}
-
-    <div class="card row-between">
-      <div><strong>Daily check-in</strong>
-        <p class="sub" style="margin:4px 0 0">${ck.doneToday ? 'Done today. Come back tomorrow.' : `Streak ${ck.streak || 0} day(s). Next bonus ${naira(ck.nextBonusKobo || 1000)}`}</p></div>
-      <button class="small" data-act="checkin" ${ck.doneToday ? 'disabled' : ''}>${ck.doneToday ? 'Done' : 'Check in'}</button>
+      <div style="margin-top:10px"><button class="small" style="background:#fff;color:#4B1FB0" data-go="deposit">+ Add money</button></div>
     </div>
 
     ${installBannerHtml()}
-    <div class="grid4">
+    <div class="grid4" style="margin:4px 0 10px;gap:12px 4px">
       ${gItem('data-act="go-send" data-type="wallet"', '↗', 'To wallet')}
       ${gItem('data-act="go-send" data-type="bank"', '🏦', 'To bank')}
+      ${gItem('data-go="airtime"', '📱', 'Airtime')}
+      ${gItem('data-act="bill-open" data-cat="DATA"', '📶', 'Data')}
+      ${gItem('data-act="bill-open" data-cat="ELECTRICITY"', '💡', 'Electricity')}
+      ${gItem('data-act="bill-open" data-cat="CABLE"', '📺', 'Cable TV')}
+      ${gItem('data-act="bill-open" data-cat="BETTING"', '⚽', 'Betting')}
+      ${gItem('data-act="bill-open" data-cat="EXAM"', '🎓', 'Exam PIN')}
       ${gItem('data-go="request"', '📥', 'Request')}
       ${gItem('data-go="split"', '➗', 'Split')}
       ${gItem('data-go="goals"', '🎯', 'Save')}
-      ${gItem('data-go="airtime"', '📱', 'Airtime')}
-      ${gItem('data-go="insights"', '📊', 'Insights')}
       ${gItem('data-go="more"', '⋯', 'More')}
     </div>
+    <!--home-extra-->
 
-    <div class="card" style="background:linear-gradient(135deg,#7B3FF2,#4B1FB0);border:none" data-go="rewards">
-      <strong>Invite friends, earn rewards</strong>
-      <p class="sub" style="color:#E7DCFF;margin:4px 0 0">You earn when they deposit ₦500 or more.</p>
+    <div class="card row-between" style="padding:12px 16px">
+      <div><strong>Daily check-in</strong>
+        <p class="sub" style="margin:2px 0 0">${ck.doneToday ? 'Done today. Come back tomorrow.' : `Streak ${ck.streak || 0} day(s). Next bonus ${naira(ck.nextBonusKobo || 1000)}`}</p></div>
+      <button class="small" data-act="checkin" ${ck.doneToday ? 'disabled' : ''}>${ck.doneToday ? 'Done' : 'Check in'}</button>
     </div>
 
     <div class="section">Recent activity</div>
-    <div class="card">${(state.history || []).length ? txList((state.history || []).slice(0, 4)) : '<p class="muted" style="margin:0">No transactions yet.</p>'}</div>
+    <div class="card">${(state.history || []).length ? txList((state.history || []).slice(0, 3)) : '<p class="muted" style="margin:0">No transactions yet.</p>'}</div>
   </div>
   ${nav('home')}`;
 }
@@ -230,6 +224,7 @@ function moreView() {
   return `<div class="app-inner">
     ${backBtn()}
     <div class="topbar"><h2>All services</h2></div>
+    ${referBanner()}
     <div class="section">Send and request</div>
     <div class="card">
       <div class="grid4" style="margin:0">
