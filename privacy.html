@@ -5,62 +5,107 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Privacy policy · Legendary Pay</title>
 <style>
-  :root { --bg:#f7f5fb; --text:#1d1530; --muted:#6b6280; --accent:#6a2bd6; }
-  @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --bg:#140d24; --text:#f1ecfb; --muted:#a79dbf; --accent:#a77bff; } }
-  :root[data-theme="dark"] { --bg:#140d24; --text:#f1ecfb; --muted:#a79dbf; --accent:#a77bff; }
+  :root { --bg:#f7f5fb; --text:#1d1530; --muted:#6b6280; --accent:#6a2bd6; --mark:#fff3b0; }
+  @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --bg:#140d24; --text:#f1ecfb; --muted:#a79dbf; --accent:#a77bff; --mark:#4a3d12; } }
+  :root[data-theme="dark"] { --bg:#140d24; --text:#f1ecfb; --muted:#a79dbf; --accent:#a77bff; --mark:#4a3d12; }
   body { margin:0; background:var(--bg); color:var(--text); font:16px/1.6 system-ui, sans-serif; }
   main { max-width:720px; margin:0 auto; padding:24px 16px 48px; }
   h1 { color:var(--accent); font-size:26px; margin:8px 0 4px; }
   h2 { font-size:18px; margin:28px 0 8px; }
+  h3 { font-size:16px; margin:16px 0 4px; }
   .muted { color:var(--muted); font-size:14px; }
   a { color:var(--accent); }
+  ul { padding-left:20px; }
+  li { margin:4px 0; }
+  .todo { background:var(--mark); padding:0 3px; border-radius:3px; }
+  table { width:100%; border-collapse:collapse; font-size:14px; margin:8px 0; }
+  th, td { text-align:left; vertical-align:top; padding:8px 6px; border-bottom:1px solid rgba(127,127,127,.25); }
+  th { color:var(--muted); font-weight:600; }
 </style>
 </head>
 <body>
 <main>
-  <h1>Privacy policy</h1>
-  <p class="muted">Legendary Pay · Last updated 11 October 2026</p>
+<h1>Privacy policy</h1>
+<p class="muted">Legendary Pay · Last updated 13 October 2026</p>
 
-  <p>This policy explains what information Legendary Pay collects, why we collect it, who we share it with, and how you can delete your account. Legendary Pay is a naira wallet run by LËGĒNDÃRY LAB™ Studio.</p>
+<p>This policy explains what personal information Legendary Pay collects, why we collect it, the legal basis we rely on, who we share it with, how long we keep it, and what rights you have. Legendary Pay is a naira wallet run by LËGĒNDÃRY LAB™ Studio. We process personal data in line with the Nigeria Data Protection Act 2023 (NDPA).</p>
 
-  <h2>1. What we collect</h2>
-  <ul>
-    <li><strong>Account details:</strong> your phone number, email address, full name and the 4-digit PIN you choose. We store only a scrambled (hashed) version of your PIN, never the PIN itself.</li>
-    <li><strong>Identity checks:</strong> when you verify your identity, your BVN or NIN is sent to our payment partner Flutterwave to check it. We do not keep your full BVN or NIN after the check.</li>
-    <li><strong>Money records:</strong> deposits, transfers, savings, bill payments and the amounts and dates of each.</li>
-    <li><strong>Device information:</strong> a device ID, used to stop people from abusing the referral rewards.</li>
-    <li><strong>Support messages:</strong> chats you send to our support team, and any transaction problem you report.</li>
-  </ul>
-  <p>Fingerprint login and payment approval work on your phone. Your fingerprint never leaves your phone and Legendary Pay never receives or stores it. We store only a public key that your phone creates, which cannot be used to recover your fingerprint.</p>
+<h2>1. Who to contact</h2>
+<ul>
+  <li>Support: open the app and go to Help → Chat with support, or email <a href="mailto:legendarylabsupport@gmail.com">legendarylabsupport@gmail.com</a>.</li>
+  <li>Data protection officer: Ayantunde Praise Elijah, <a href="mailto:ayantundepraise77@gmail.com">ayantundepraise77@gmail.com</a>.</li>
+</ul>
 
-  <h2>2. Why we use it</h2>
-  <p>We use your information to run your wallet, send and record payments, protect your account from fraud, answer support messages, send you account emails and alerts, and meet our legal duties (for example, keeping financial records).</p>
+<h2>2. What we collect</h2>
+<table>
+  <tr><th>Information</th><th>What it includes</th></tr>
+  <tr><td>Account details</td><td>Full name, email address and phone number. You sign in with your phone number or email and your 4-digit PIN. We store only a scrambled (hashed) version of your PIN, never the PIN itself.</td></tr>
+  <tr><td>Identity details</td><td>When you verify your account, we send your BVN or NIN to our payment partner Flutterwave to open your virtual account. We keep only a one-way hash (a scrambled fingerprint) of the number, so that one ID cannot be used on two accounts. We do not keep the full number.</td></tr>
+  <tr><td>Bank details</td><td>Bank names and account numbers you save or send money to, your virtual account number, and the bank it is held with.</td></tr>
+  <tr><td>Money records</td><td>Deposits, transfers, savings goals, bill payments, airtime purchases, and the amounts, dates and references of each.</td></tr>
+  <tr><td>Phone number used for airtime</td><td>The number you top up, shown on the transaction record.</td></tr>
+  <tr><td>Device information</td><td>A device ID, used to prevent abuse of referral rewards.</td></tr>
+  <tr><td>Support messages</td><td>Chats with our support team, pictures you send in support chat, and any transaction problem you report.</td></tr>
+  <tr><td>AI assistant (Lega)</td><td>Questions you ask Lega, and the information Lega uses to answer: your wallet balances and your last five transactions. Lega does not see your full account number or the notes you add to transfers.</td></tr>
+</table>
+<p>Fingerprint login and payment approval happen on your phone. Your fingerprint never leaves your phone and Legendary Pay never receives or stores it. We store only a public key your phone creates, which cannot be used to recover your fingerprint.</p>
 
-  <h2>3. Who we share it with</h2>
-  <ul>
-    <li><strong>Flutterwave</strong>, for payments, bank transfers, bill payments and identity checks.</li>
-    <li><strong>Our hosting providers</strong> (Render for the server, Vercel for the web app), which store and process data on our behalf.</li>
-    <li><strong>Our email service</strong>, to send account emails such as codes and receipts.</li>
-  </ul>
-  <p>We do not sell your personal information.</p>
+<h2>3. Why we use it, and our legal basis</h2>
+<table>
+  <tr><th>Purpose</th><th>Legal basis (NDPA 2023)</th></tr>
+  <tr><td>Opening and running your wallet, sending and recording payments, bank transfers, bills and airtime</td><td>Contract: needed to provide the service you ask for</td></tr>
+  <tr><td>Opening your virtual account (BVN or NIN check through Flutterwave)</td><td>Legal obligation and contract: required by the payment rules that govern virtual accounts</td></tr>
+  <tr><td>Keeping financial records, and responding to lawful requests from regulators or courts</td><td>Legal obligation</td></tr>
+  <tr><td>Stopping fraud, abuse and duplicate accounts (device ID, ID hash, PIN attempt limits)</td><td>Legitimate interest: keeping the wallet safe for all users</td></tr>
+  <tr><td>Answering support messages and sending account emails and alerts</td><td>Contract and legitimate interest</td></tr>
+  <tr><td>Using the Lega assistant on your balance and recent transactions</td><td>Consent: you start the chat yourself, and you can stop using it at any time</td></tr>
+</table>
 
-  <h2>4. How long we keep it</h2>
-  <p>While your account is open, we keep your information so the wallet works. When you delete your account, we erase your name, phone number, email, PIN and device details. We keep your transaction records, because the law requires us to keep financial records for a set time.</p>
+<h2>4. Who we share it with</h2>
+<ul>
+  <li><strong>Flutterwave</strong>: payments, bank transfers, bill payments, airtime, virtual accounts, and identity checks.</li>
+  <li><strong>OpenRouter</strong>: the AI service that powers Lega. It receives only the questions you ask Lega and the balance and recent-transaction details described above.</li>
+  <li><strong>Render</strong> (server hosting) and <strong>Vercel</strong> (web app hosting): they store and process data for us. Their servers may be outside Nigeria, including in the United States. We rely on their data processing terms for protection. <span class="todo">[confirm DPA links]</span></li>
+  <li><strong>Our email provider</strong>: to send account emails such as codes and receipts.</li>
+</ul>
+<p>We do not sell your personal information. We share information with others only as needed for the services above, or when the law requires it.</p>
 
-  <h2>5. Delete your account</h2>
-  <p>Open the app, go to <strong>Me → Settings → Delete account</strong>, and confirm with your PIN or fingerprint. Your wallet must be at ₦0 first. After deletion you cannot sign in again with the same phone number or email.</p>
+<h2>5. How long we keep it</h2>
+<table>
+  <tr><th>Information</th><th>Kept for</th></tr>
+  <tr><td>Account details and PIN</td><td>While your account is open. Erased when you delete your account.</td></tr>
+  <tr><td>Hash of BVN or NIN</td><td>While your account is open, and then <span class="todo">[X]</span> years after deletion, to prevent duplicate accounts.</td></tr>
+  <tr><td>Money records and receipts</td><td><span class="todo">[X]</span> years after the transaction, as financial record-keeping law requires.</td></tr>
+  <tr><td>Support chats and pictures</td><td><span class="todo">[X]</span> months after the chat is closed. Pictures are deleted sooner, after <span class="todo">[X]</span> days.</td></tr>
+  <tr><td>Device information</td><td>While your account is open. Erased when you delete your account.</td></tr>
+</table>
 
-  <h2>6. Keeping your account safe</h2>
-  <p>Every debit needs your PIN or fingerprint. We lock PIN attempts after several wrong tries. Keep your PIN private, and do not share codes sent to you by email with anyone, including people who say they work for us.</p>
+<h2>6. Your rights</h2>
+<p>Under the NDPA 2023 you can ask us to:</p>
+<ul>
+  <li>tell you what personal data we hold about you, and give you a copy;</li>
+  <li>correct information that is wrong;</li>
+  <li>delete your information, subject to the records we must keep by law;</li>
+  <li>restrict or object to some uses of your information;</li>
+  <li>withdraw consent where we rely on it.</li>
+</ul>
+<p>You can download a copy of your data at any time in the app: Me → Settings → Download my data.</p>
+<p>To use these rights, contact us using the details in section 1. We will respond within the time the NDPA requires. You can also complain to the Nigeria Data Protection Commission (ndpc.gov.ng).</p>
 
-  <h2>7. Who can use Legendary Pay</h2>
-  <p>Legendary Pay is for people aged 18 and over. We do not knowingly collect information from anyone younger.</p>
+<h2>7. Deleting your account</h2>
+<p>Open the app, go to Me → Settings → Delete account, and confirm with your PIN or fingerprint. Your wallet must be at ₦0 first. When you delete your account we erase your name, email, phone number, PIN, device details, saved people and bank details, reminders, schedules, notifications, and the fingerprint keys stored for your phone. We keep your transaction and payout records, and the hash of your ID number, for the periods in section 5. After deletion you cannot sign in again with the same phone number or email.</p>
 
-  <h2>8. Your questions</h2>
-  <p>To ask about your information, open the app and go to <strong>Help → Chat with support</strong>. We will reply there.</p>
+<h2>8. Keeping your account safe</h2>
+<p>Every payment needs your PIN or fingerprint. We limit repeated wrong PIN attempts. Keep your PIN private. Do not share codes sent to your email with anyone, including people who say they work for us. We will never ask for your PIN by phone, email or chat.</p>
 
-  <h2>9. Changes</h2>
-  <p>If we change this policy, we will update the date at the top and tell you in the app.</p>
+<h2>9. Security and breaches</h2>
+<p>We protect your information with access controls, limited staff roles, and an audit log of staff actions. If a breach puts your personal data at risk, we will notify the Nigeria Data Protection Commission within 72 hours of becoming aware of it, and we will tell affected users without undue delay.</p>
+
+<h2>10. Who can use Legendary Pay</h2>
+<p>Legendary Pay is for people aged 18 and over. We do not knowingly collect information from anyone younger. If you believe a child has given us information, contact us and we will delete it.</p>
+
+<h2>11. Changes</h2>
+<p>If we change this policy, we will update the date at the top and tell you in the app before the change takes effect.</p>
 </main>
 <script>
   // Follow the theme the user picked in the app.

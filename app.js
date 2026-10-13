@@ -514,6 +514,20 @@ const SUBMIT = {
     }
   },
 
+  // Download my data (NDPA right of access): saves a JSON file to the phone.
+  async 'download-data'() {
+    try {
+      const r = await fetch(API + '/me/data', { headers: { authorization: 'Bearer ' + store.get('lp_token') } });
+      if (!r.ok) throw new Error('Could not get your data. Try again.');
+      const url = URL.createObjectURL(await r.blob());
+      const a = document.createElement('a');
+      a.href = url; a.download = 'legendary-pay-my-data.json';
+      document.body.appendChild(a); a.click(); a.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 2000);
+      toast('Your data file is downloading.');
+    } catch (e) { toast(e.message); }
+  },
+
   async 'delete-account'(d) {
     await api('/me/account', { method: 'DELETE', body: { confirm: d.confirm, pin: d.pin, approval: d.approval } });
     logout();

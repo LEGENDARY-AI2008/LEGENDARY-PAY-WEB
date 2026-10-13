@@ -909,6 +909,7 @@ function settingsView() {
       ${rowLine('Notifications', '›', '', 'data-go="notifications"')}
       ${rowLine('Security center', '›', '', 'data-go="security"')}
       ${rowLine('Help', '›', '', 'data-go="help"')}
+      ${rowLine('Download my data', '›', 'Get a copy of your information', 'data-act="download-data"')}
       ${rowLine('Delete account', '›', 'Close your wallet', 'data-go="delete-account"')}
       <a href="/privacy" target="_blank" rel="noopener" class="row-line" style="text-decoration:none;color:inherit"><div><div class="t-title">Privacy policy</div></div><span class="muted">›</span></a>
     </div>
