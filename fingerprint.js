@@ -82,6 +82,7 @@ async function fpLogin() {
     const opts = await api('/auth/webauthn/login/options', { method: 'POST', auth: false });
     const answer = await fpGet(opts);
     const r = await api('/auth/webauthn/login/verify', { method: 'POST', auth: false, body: { response: answer } });
+    store.del('lp_wallet_cache'); // never show the previous person's balance
     store.set('lp_token', r.token);
     state.wallet = null;
     await loadWallet();

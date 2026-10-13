@@ -171,6 +171,7 @@ async function loadWallet() {
   try {
     state.wallet = await api('/wallet');
     state.offline = false;
+    if (window.showTestNotice) window.showTestNotice(); // test-mode notice, once per sign-in
     store.set(WALLET_CACHE, JSON.stringify(state.wallet));
     return state.wallet;
   } catch (e) {
@@ -185,6 +186,7 @@ async function loadWallet() {
 }
 
 function logout() {
+  window.__testNoticeDone = false; // show the test-mode notice again after the next sign-in
   store.del('lp_token');
   store.del(WALLET_CACHE);
   state.wallet = null;
@@ -388,6 +390,7 @@ async function refreshSupport() {
 const SUBMIT = {
   async login(d) {
     const r = await api('/auth/login', { method: 'POST', body: { identifier: d.identifier.trim(), pin: d.pin }, auth: false });
+    store.del(WALLET_CACHE); // never show the previous person's balance
     store.set('lp_token', r.token);
     state.wallet = null;
     await loadWallet();
@@ -407,6 +410,7 @@ const SUBMIT = {
         deviceId: deviceId(),
       },
     });
+    store.del(WALLET_CACHE);
     store.set('lp_token', r.token);
     state.wallet = null;
     toast('Account created. Enter the code we emailed you.');
