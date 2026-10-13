@@ -43,7 +43,14 @@ async function fpGet(opts) {
 
 // Shown inside every form that moves money out. Either the PIN or the fingerprint is enough.
 function approvalBlock() {
-  return `<label>Your 4-digit PIN (or use fingerprint)<input name="pin" inputmode="numeric" maxlength="4" pattern="\\d{4}" autocomplete="current-password"></label>
+  return `<div class="pin-label">Your 4-digit PIN (or use fingerprint)</div>
+    <div class="pin4" data-pin4>
+      <input type="password" inputmode="numeric" pattern="[0-9]*" autocomplete="off" data-d="1" aria-label="PIN digit 1">
+      <input type="password" inputmode="numeric" pattern="[0-9]*" autocomplete="off" data-d="2" aria-label="PIN digit 2">
+      <input type="password" inputmode="numeric" pattern="[0-9]*" autocomplete="off" data-d="3" aria-label="PIN digit 3">
+      <input type="password" inputmode="numeric" pattern="[0-9]*" autocomplete="off" data-d="4" aria-label="PIN digit 4">
+      <input type="hidden" name="pin" value="">
+    </div>
     <button type="button" class="secondary" data-act="approve-fp">Use fingerprint</button>
     <input type="hidden" name="approval" value="">
     <p class="note fp-status" style="margin:0"></p>`;

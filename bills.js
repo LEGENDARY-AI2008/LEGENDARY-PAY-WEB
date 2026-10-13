@@ -153,7 +153,6 @@ function billsView() {
         <label>${numberLabel}<input name="customer" inputmode="numeric" required></label>
         ${typed ? `${quick}<label>Amount (₦)<input name="amount" inputmode="decimal" placeholder="5000" required></label>` : ''}
         ${isData ? '' : '<button type="button" class="secondary" data-act="bill-check">Check number</button><p class="note bill-name" style="margin:6px 0 0"></p>'}
-        ${approvalBlock()}
         <input type="hidden" name="idemKey" value="${esc(state.idem)}">
         <button type="submit">Pay</button>
       </form>
@@ -179,7 +178,6 @@ function airtimeView() {
         <div class="bill-lbl">Quick amount</div>
         ${quickGrid(QUICK_AMOUNTS.AIRTIME)}
         <label>Amount (₦)<input name="amount" inputmode="decimal" placeholder="500" required></label>
-        ${approvalBlock()}
         <input type="hidden" name="idemKey" value="${esc(state.idem)}">
         <button type="submit">Buy airtime</button>
       </form>

@@ -371,7 +371,6 @@ function sendView() {
       <div class="recipient"></div>
       <label>Amount (₦)<input name="amount" inputmode="decimal" placeholder="0.00" required value="${esc(p.amount || '')}"></label>
       <label>Note (optional)<input name="note" maxlength="60" placeholder="e.g. Thanks for lunch"></label>
-      ${approvalBlock()}
       <label>Save this person as (optional)<input name="saveAs" maxlength="40" placeholder="e.g. Mum"></label>
       <input type="hidden" name="idemKey" value="${esc(state.idem)}">
       <input type="hidden" name="requestId" value="${esc(p.requestId || '')}">
@@ -676,7 +675,6 @@ function goalCard(g) {
         <option value="out">Take out (back to wallet)</option>
       </select></label>
       <label>Amount (₦)<input name="amount" inputmode="decimal" required></label>
-      ${approvalBlock()}
       <button type="submit">Confirm</button>
     </form>
   </div>`;
