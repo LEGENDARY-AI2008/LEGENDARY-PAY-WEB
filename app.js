@@ -195,6 +195,7 @@ function logout() {
   state.receipt = null;
   state.support = null;
   state.adminThread = null;
+  state.bankLookup = null;
   stopSupportPolling();
   state.stack = [];
   state.authMode = 'login';
@@ -468,6 +469,8 @@ const SUBMIT = {
   async 'staff-search'(d) { await staffSearch(d.q); },
   async 'staff-adjust'(d) { await staffAdjust(d); },
   async 'staff-reverse'(d) { await staffReverse(d); },
+  async 'staff-unlock-pin'(d) { await staffUnlockPin(d); },
+  async 'staff-bank-details'(d) { await staffBankDetails(d); },
   async 'staff-role'(d) { await staffRole(d); },
   async 'admin-broadcast'(d) { await adminBroadcast(d); },
   async 'admin-interest'(d) { await adminInterest(d); },

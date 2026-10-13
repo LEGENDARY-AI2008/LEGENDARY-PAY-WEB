@@ -103,7 +103,7 @@ adminView = function () {
     return `<button class="small secondary" data-act="admin-support" data-id="${id}">${isSupport ? 'Remove support' : 'Promote to support'}</button>\n        ${m}`;
   });
   return html.replace('<div class="topbar"><h2>Admin panel</h2></div>',
-    '<div class="topbar"><h2>Admin panel</h2></div>\n    ' + billDebugCard() + '\n    ' + interestCard() + '\n    ' + broadcastCard());
+    '<div class="topbar"><h2>Admin panel</h2></div>\n    ' + bankDetailsCard() + '\n    ' + billDebugCard() + '\n    ' + interestCard() + '\n    ' + broadcastCard());
 };
 
 // ---------- support tools screen ----------
@@ -132,6 +132,14 @@ function staffView() {
         <button type="submit">Apply adjustment</button>
       </form>
       <p class="note">Support limit: ₦20,000 per action. Admins have no limit.</p>
+      <h3 style="font-size:16px;margin:18px 0 4px">Unlock PIN</h3>
+      <p class="sub" style="margin:0 0 6px">Only after you have checked who the person is (for example by phone or email).</p>
+      <form data-form="staff-unlock-pin" data-approval style="margin-top:6px">
+        <input type="hidden" name="userId" value="${esc(s.pick.id)}">
+        <label>Reason (e.g. verified by phone call)<input name="reason" maxlength="120" required></label>
+        ${approvalBlock()}
+        <button type="submit" class="secondary">Unlock PIN</button>
+      </form>
     </div>` : '';
 
   const reverse = `<div class="card">
@@ -215,6 +223,47 @@ async function staffAdjust(d) {
   toast(`Done. ${r.kobo > 0 ? 'Added' : 'Taken'} to the wallet.`);
   state.staffIdem = null;
   await loadStaff();
+  state.staff.pick = null;
+  render();
+}
+
+// ---------- admin only: full bank account of one payout (every view is logged) ----------
+function bankDetailsCard() {
+  const r = state.bankLookup;
+  const result = r ? `<div class="card" style="margin-top:10px">
+      <p class="sub" style="margin:0">Payout ${esc(r.payoutId)} · ${naira(r.amountKobo)} · ${esc(r.status)}</p>
+      <p style="margin:6px 0 0"><b>Bank code:</b> ${esc(r.bankCode)}</p>
+      <p style="margin:4px 0 0"><b>Account number:</b> ${esc(r.accountNumber)}</p>
+      <p class="note" style="margin:6px 0 0">This view is logged with your name and reason.</p>
+    </div>` : '';
+  return `<div class="card">
+      <h3 style="font-size:17px;margin-bottom:4px">Bank account of a payout</h3>
+      <p class="sub" style="margin:0 0 6px">Admin only. Use only for a dispute or a failed transfer. The payout number is in the user's receipt.</p>
+      <form data-form="staff-bank-details" data-approval style="margin-top:6px">
+        <label>Payout number<input name="payoutId" inputmode="numeric" required></label>
+        <label>Reason (e.g. customer dispute ticket)<input name="reason" maxlength="120" required></label>
+        ${approvalBlock()}
+        <button type="submit" class="secondary">Show account number</button>
+      </form>
+      ${result}
+    </div>`;
+}
+
+async function staffBankDetails(d) {
+  state.bankLookup = await api('/staff/bank-details', {
+    method: 'POST',
+    body: { payoutId: d.payoutId, reason: d.reason, pin: d.pin, approval: d.approval },
+  });
+  toast('Shown. This view is logged.');
+  render();
+}
+
+async function staffUnlockPin(d) {
+  await api('/staff/unlock-pin', {
+    method: 'POST',
+    body: { userId: d.userId, reason: d.reason, pin: d.pin, approval: d.approval },
+  });
+  toast('PIN unlocked. The person can sign in now.');
   state.staff.pick = null;
   render();
 }
